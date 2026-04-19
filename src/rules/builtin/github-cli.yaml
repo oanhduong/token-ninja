@@ -1,0 +1,78 @@
+domain: github-cli
+rules:
+  - id: gh-auth-status
+    match:
+      type: exact
+      patterns: ["gh auth status"]
+    action: { type: shell, command: "gh auth status" }
+    safety: read-only
+
+  - id: gh-repo-list
+    match:
+      type: prefix
+      patterns: ["gh repo list", "gh repo view", "gh repo clone"]
+    action: { type: shell, command: "gh repo", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-pr-list
+    match:
+      type: exact
+      patterns: ["gh pr list", "gh pr list --state all", "gh pr list --author @me", "gh pr list --limit 10"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: gh-pr-passthrough
+    match:
+      type: prefix
+      patterns: ["gh pr list", "gh pr view", "gh pr checkout", "gh pr diff", "gh pr status", "gh pr checks"]
+    action: { type: shell, command: "gh pr", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-pr-create
+    match:
+      type: prefix
+      patterns: ["gh pr create"]
+    action: { type: shell, command: "gh pr create", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-pr-merge
+    match:
+      type: prefix
+      patterns: ["gh pr merge"]
+    action: { type: shell, command: "gh pr merge", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-issue
+    match:
+      type: prefix
+      patterns: ["gh issue list", "gh issue view", "gh issue create", "gh issue close", "gh issue status", "gh issue"]
+    action: { type: shell, command: "gh issue", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-run
+    match:
+      type: prefix
+      patterns: ["gh run list", "gh run view", "gh run watch", "gh run rerun", "gh run"]
+    action: { type: shell, command: "gh run", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-workflow
+    match:
+      type: prefix
+      patterns: ["gh workflow list", "gh workflow view", "gh workflow run", "gh workflow"]
+    action: { type: shell, command: "gh workflow", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-release
+    match:
+      type: prefix
+      patterns: ["gh release list", "gh release view", "gh release"]
+    action: { type: shell, command: "gh release", args_passthrough: true }
+    safety: write-network
+
+  - id: gh-api
+    match:
+      type: prefix
+      patterns: ["gh api"]
+    action: { type: shell, command: "gh api", args_passthrough: true }
+    safety: write-network

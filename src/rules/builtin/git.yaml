@@ -1,0 +1,559 @@
+domain: git
+rules:
+  # ── read-only ────────────────────────────────────────────────────────
+  - id: git-status
+    match:
+      type: exact
+      patterns:
+        - "git status"
+        - "git status -s"
+        - "git status -sb"
+        - "git status --short"
+        - "git status --short --branch"
+        - "git status --porcelain"
+        - "git status --porcelain=v1"
+        - "git status --porcelain=v2"
+        - "git status --ignored"
+        - "git st"
+    action: { type: shell, command: "git status" }
+    safety: read-only
+    examples: ["git status", "git st"]
+
+  - id: git-status-short
+    match:
+      type: exact
+      patterns: ["git status --short", "git status -s", "git st -s"]
+    action: { type: shell, command: "git status --short --branch" }
+    safety: read-only
+
+  - id: git-diff
+    match:
+      type: exact
+      patterns:
+        - "git diff"
+        - "git diff --staged"
+        - "git diff --cached"
+        - "git diff HEAD"
+        - "git diff --stat"
+        - "git diff --shortstat"
+        - "git diff --name-only"
+        - "git diff --name-status"
+        - "git diff --numstat"
+        - "git diff --check"
+        - "git diff --cached --stat"
+        - "git diff HEAD~1"
+        - "git diff HEAD~1 HEAD"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-diff-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "git diff --staged"
+        - "git diff --cached"
+        - "git diff --name-only"
+        - "git diff --name-status"
+        - "git diff --stat"
+        - "git diff"
+    action: { type: shell, command: "git diff", args_passthrough: true }
+    safety: read-only
+
+  - id: git-log
+    match:
+      type: exact
+      patterns:
+        - "git log"
+        - "git log --oneline"
+        - "git log --oneline --graph"
+        - "git log --oneline --graph --all"
+        - "git log --oneline --graph --decorate"
+        - "git log --oneline --graph --decorate --all"
+        - "git log --stat"
+        - "git log --graph"
+        - "git log -n 10"
+        - "git log -n 20"
+        - "git log -10"
+        - "git log -20"
+        - "git log -p"
+        - "git log -1"
+        - "git log -1 --stat"
+        - "git log --all"
+        - "git log --decorate"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-log-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "git log --author"
+        - "git log --since"
+        - "git log --until"
+        - "git log --grep"
+        - "git log --oneline"
+        - "git log --stat"
+        - "git log --graph"
+        - "git log -n"
+        - "git log -p"
+        - "git log"
+    action: { type: shell, command: "git log", args_passthrough: true }
+    safety: read-only
+
+  - id: git-show
+    match:
+      type: prefix
+      patterns: ["git show --stat", "git show --name-only", "git show"]
+    action: { type: shell, command: "git show", args_passthrough: true }
+    safety: read-only
+
+  - id: git-branch-list
+    match:
+      type: exact
+      patterns:
+        - "git branch"
+        - "git branch -a"
+        - "git branch -r"
+        - "git branch -v"
+        - "git branch -vv"
+        - "git branch -av"
+        - "git branch --show-current"
+        - "git branch --list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-branch-list-passthrough
+    match:
+      type: regex
+      patterns: ["^git branch(?:\\s+(-a|-r|-v|-vv|-av|--list|--show-current|--all|--remotes))*$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: git-current-branch
+    match:
+      type: exact
+      patterns:
+        - "git rev-parse --abbrev-ref HEAD"
+        - "git symbolic-ref --short HEAD"
+        - "git branch --show-current"
+    action: { type: shell, command: "git branch --show-current" }
+    safety: read-only
+
+  - id: git-remote-list
+    match:
+      type: exact
+      patterns: ["git remote", "git remote -v", "git remote --verbose"]
+    action: { type: shell, command: "git remote -v" }
+    safety: read-only
+
+  - id: git-remote-show
+    match:
+      type: prefix
+      patterns: ["git remote show", "git remote get-url", "git remote -v show"]
+    action: { type: shell, command: "git remote", args_passthrough: true }
+    safety: read-only
+
+  - id: git-config-list
+    match:
+      type: exact
+      patterns: ["git config --list", "git config -l", "git config --list --show-origin"]
+    action: { type: shell, command: "git config --list" }
+    safety: read-only
+
+  - id: git-config-get
+    match:
+      type: prefix
+      patterns: ["git config --get", "git config get"]
+    action: { type: shell, command: "git config --get", args_passthrough: true }
+    safety: read-only
+
+  - id: git-stash-list
+    match:
+      type: exact
+      patterns: ["git stash list", "git stash show", "git stash show -p"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-stash-show
+    match:
+      type: prefix
+      patterns: ["git stash show", "git stash list"]
+    action: { type: shell, command: "git stash", args_passthrough: true }
+    safety: read-only
+
+  - id: git-ls-files
+    match:
+      type: prefix
+      patterns: ["git ls-files", "git ls-tree"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-ls-passthrough
+    match:
+      type: regex
+      patterns: ["^git\\s+(ls-files|ls-tree)(?:\\s+.+)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: git-blame
+    match:
+      type: prefix
+      patterns: ["git blame -L", "git blame -w", "git blame"]
+    action: { type: shell, command: "git blame", args_passthrough: true }
+    safety: read-only
+
+  - id: git-reflog
+    match:
+      type: prefix
+      patterns: ["git reflog show", "git reflog"]
+    action: { type: shell, command: "git reflog", args_passthrough: true }
+    safety: read-only
+
+  - id: git-shortlog
+    match:
+      type: exact
+      patterns: ["git shortlog", "git shortlog -sn", "git shortlog -s -n"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-shortlog-passthrough
+    match:
+      type: prefix
+      patterns: ["git shortlog"]
+    action: { type: shell, command: "git shortlog", args_passthrough: true }
+    safety: read-only
+
+  - id: git-describe
+    match:
+      type: prefix
+      patterns: ["git describe --tags", "git describe"]
+    action: { type: shell, command: "git describe", args_passthrough: true }
+    safety: read-only
+
+  - id: git-tag-list
+    match:
+      type: exact
+      patterns: ["git tag", "git tag -l", "git tag --list", "git tag -n"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-tag-list-passthrough
+    match:
+      type: regex
+      patterns: ["^git tag(?:\\s+(-l|--list|-n|--sort=[^\\s]+))*$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: git-rev-parse
+    match:
+      type: prefix
+      patterns: ["git rev-parse --abbrev-ref", "git rev-parse --short", "git rev-parse"]
+    action: { type: shell, command: "git rev-parse", args_passthrough: true }
+    safety: read-only
+
+  - id: git-cat-file
+    match:
+      type: prefix
+      patterns: ["git cat-file"]
+    action: { type: shell, command: "git cat-file", args_passthrough: true }
+    safety: read-only
+
+  - id: git-merge-base
+    match:
+      type: prefix
+      patterns: ["git merge-base"]
+    action: { type: shell, command: "git merge-base", args_passthrough: true }
+    safety: read-only
+
+  - id: git-cherry
+    match:
+      type: prefix
+      patterns: ["git cherry"]
+    action: { type: shell, command: "git cherry", args_passthrough: true }
+    safety: read-only
+
+  - id: git-whatchanged
+    match:
+      type: prefix
+      patterns: ["git whatchanged"]
+    action: { type: shell, command: "git whatchanged", args_passthrough: true }
+    safety: read-only
+
+  - id: git-worktree-list
+    match:
+      type: exact
+      patterns: ["git worktree list"]
+    action: { type: shell, command: "git worktree list" }
+    safety: read-only
+
+  - id: git-submodule-status
+    match:
+      type: exact
+      patterns: ["git submodule", "git submodule status", "git submodule foreach --recursive git status"]
+    action: { type: shell, command: "git submodule status" }
+    safety: read-only
+
+  - id: git-fsck
+    match:
+      type: exact
+      patterns: ["git fsck", "git fsck --full", "git fsck --no-reflogs"]
+    action: { type: shell, command: "git fsck" }
+    safety: read-only
+
+  - id: git-count-objects
+    match:
+      type: exact
+      patterns: ["git count-objects", "git count-objects -v", "git count-objects -vH"]
+    action: { type: shell, command: "git count-objects -vH" }
+    safety: read-only
+
+  - id: git-show-ref
+    match:
+      type: prefix
+      patterns: ["git show-ref"]
+    action: { type: shell, command: "git show-ref", args_passthrough: true }
+    safety: read-only
+
+  - id: git-bisect-log
+    match:
+      type: exact
+      patterns: ["git bisect log"]
+    action: { type: shell, command: "git bisect log" }
+    safety: read-only
+
+  # ── write, bounded ───────────────────────────────────────────────────
+  - id: git-add
+    match:
+      type: prefix
+      patterns: ["git add -A", "git add --all", "git add -p", "git add -u", "git add"]
+    action: { type: shell, command: "git add", args_passthrough: true }
+    safety: write-confined
+
+  - id: git-commit-message
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+commit\\s+-m\\s+(.+)$"
+        - "^git\\s+commit\\s+-am\\s+(.+)$"
+        - "^git\\s+commit\\s+-a\\s+-m\\s+(.+)$"
+    action: { type: shell, command: "git commit {{input}}" }
+    safety: write-confined
+
+  - id: git-commit-amend-message
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+commit\\s+--amend\\s+-m\\s+(.+)$"
+        - "^git\\s+commit\\s+--amend\\s+--no-edit$"
+    action: { type: shell, command: "git commit {{input}}" }
+    safety: write-confined
+
+  - id: git-checkout-branch
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+checkout\\s+(\\S+)$"
+        - "^git\\s+checkout\\s+-b\\s+(\\S+)$"
+        - "^git\\s+checkout\\s+-B\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: git-checkout-passthrough
+    match:
+      type: regex
+      patterns: ["^git\\s+checkout\\s+(-b|-B|--track|--detach)?\\s*(\\S+)$"]
+    action: { type: shell, command: "git checkout {{arg1}} {{arg2}}" }
+    safety: write-confined
+
+  - id: git-switch
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+switch\\s+(\\S+)$"
+        - "^git\\s+switch\\s+-c\\s+(\\S+)$"
+        - "^git\\s+switch\\s+-"
+    action: { type: shell, command: "git switch {{input}}" }
+    safety: write-confined
+
+  - id: git-restore
+    match:
+      type: prefix
+      patterns: ["git restore --staged", "git restore --source", "git restore"]
+    action: { type: shell, command: "git restore", args_passthrough: true }
+    safety: write-confined
+
+  - id: git-merge-branch
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+merge\\s+(--no-ff\\s+)?(\\S+)$"
+        - "^git\\s+merge\\s+--ff-only\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: git-merge-passthrough
+    match:
+      type: prefix
+      patterns: ["git merge --ff-only", "git merge --no-ff", "git merge"]
+    action: { type: shell, command: "git merge", args_passthrough: true }
+    safety: write-confined
+
+  - id: git-pull
+    match:
+      type: exact
+      patterns: ["git pull", "git pull --rebase", "git pull --ff-only", "git pull origin main", "git pull origin master"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: git-pull-passthrough
+    match:
+      type: prefix
+      patterns: ["git pull --rebase", "git pull --ff-only", "git pull"]
+    action: { type: shell, command: "git pull", args_passthrough: true }
+    safety: write-network
+
+  - id: git-push-plain
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+push$"
+        - "^git\\s+push\\s+origin$"
+        - "^git\\s+push\\s+origin\\s+\\S+$"
+        - "^git\\s+push\\s+-u\\s+origin\\s+\\S+$"
+        - "^git\\s+push\\s+--set-upstream\\s+origin\\s+\\S+$"
+        - "^git\\s+push\\s+--force-with-lease$"
+        - "^git\\s+push\\s+--tags$"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: git-push-passthrough
+    match:
+      type: prefix
+      patterns: ["git push -u origin", "git push --set-upstream origin", "git push origin", "git push --tags", "git push"]
+    action: { type: shell, command: "git push", args_passthrough: true }
+    safety: write-network
+
+  - id: git-fetch
+    match:
+      type: prefix
+      patterns: ["git fetch --all --prune", "git fetch --prune", "git fetch --all", "git fetch"]
+    action: { type: shell, command: "git fetch", args_passthrough: true }
+    safety: write-network
+
+  - id: git-clone
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+clone\\s+(\\S+)$"
+        - "^git\\s+clone\\s+--depth\\s+(\\d+)\\s+(\\S+)$"
+        - "^git\\s+clone\\s+(\\S+)\\s+(\\S+)$"
+    action: { type: shell, command: "git clone {{input}}" }
+    safety: write-network
+
+  - id: git-tag-create
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+tag\\s+(v?[\\w.\\-]+)$"
+        - "^git\\s+tag\\s+-a\\s+(v?[\\w.\\-]+)\\s+-m\\s+(.+)$"
+    action: { type: shell, command: "git tag {{input}}" }
+    safety: write-confined
+
+  - id: git-stash-write
+    match:
+      type: exact
+      patterns:
+        - "git stash"
+        - "git stash push"
+        - "git stash pop"
+        - "git stash apply"
+        - "git stash drop"
+        - "git stash clear"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: git-stash-passthrough
+    match:
+      type: regex
+      patterns: ["^git\\s+stash\\s+(push|pop|apply|drop|clear|save)(?:\\s+.*)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-confined
+
+  - id: git-rebase-branch
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+rebase\\s+(\\S+)$"
+        - "^git\\s+rebase\\s+--continue$"
+        - "^git\\s+rebase\\s+--abort$"
+        - "^git\\s+rebase\\s+--skip$"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: git-rebase-passthrough
+    match:
+      type: regex
+      patterns: ["^git\\s+rebase\\s+(?:--continue|--abort|--skip|[\\w./-]+)$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-confined
+
+  - id: git-cherry-pick
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+cherry-pick\\s+([\\w.\\-]+)$"
+        - "^git\\s+cherry-pick\\s+--continue$"
+        - "^git\\s+cherry-pick\\s+--abort$"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: git-cherry-pick-passthrough
+    match:
+      type: prefix
+      patterns: ["git cherry-pick"]
+    action: { type: shell, command: "git cherry-pick", args_passthrough: true }
+    safety: write-confined
+
+  - id: git-revert
+    match:
+      type: regex
+      patterns:
+        - "^git\\s+revert\\s+([\\w.\\-]+)$"
+        - "^git\\s+revert\\s+--no-commit\\s+([\\w.\\-]+)$"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: git-revert-passthrough
+    match:
+      type: prefix
+      patterns: ["git revert"]
+    action: { type: shell, command: "git revert", args_passthrough: true }
+    safety: write-confined
+
+  - id: git-mv
+    match:
+      type: prefix
+      patterns: ["git mv"]
+    action: { type: shell, command: "git mv", args_passthrough: true }
+    safety: write-confined
+
+  - id: git-rm
+    match:
+      type: prefix
+      patterns: ["git rm --cached", "git rm -r", "git rm"]
+    action: { type: shell, command: "git rm", args_passthrough: true }
+    safety: write-confined
+
+  - id: git-init
+    match:
+      type: exact
+      patterns: ["git init", "git init -b main", "git init --initial-branch=main"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: git-init-passthrough
+    match:
+      type: prefix
+      patterns: ["git init"]
+    action: { type: shell, command: "git init", args_passthrough: true }
+    safety: write-confined
