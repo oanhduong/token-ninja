@@ -4,20 +4,74 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
+
+# Cancel in-flight runs on the same PR/branch when a newer commit arrives.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  lint:
+    name: lint + typecheck
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: verify packed artifacts
+        run: |
+          test -f dist/cli.js
+          test -d dist/rules/builtin
+          npm pack --dry-run
+
+  test:
+    name: test (node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         node: [20, 22]
+        os: [ubuntu-latest]
+        include:
+          - node: 20
+            os: macos-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
-      - run: npm run typecheck
+      - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: npm run test:coverage
+        env:
+          CI: "true"
+      - name: upload coverage
+        if: matrix.node == 20 && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore
