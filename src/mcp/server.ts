@@ -4,11 +4,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { loadRules } from "../rules/loader.js";
-import { classify } from "../router/classifier.js";
-import { execShell } from "../router/executor.js";
-import { validate } from "../safety/validator.js";
-import { recordHit, recordFallback, estimateTokensSaved } from "../telemetry/stats.js";
+import { routeOnce } from "../router/route-once.js";
 
 const TOOL_NAME = "maybe_execute_locally";
 
@@ -61,77 +57,9 @@ export async function startMcpServer(): Promise<void> {
       context?: { cwd?: string; ai_tool?: string };
     };
     const command = typeof args.command === "string" ? args.command : "";
-    if (!command.trim()) {
-      return {
-        content: [
-          { type: "text", text: JSON.stringify({ handled: false, reason: "empty_command" }) },
-        ],
-      };
-    }
-
-    const safety = validate(command);
-    if (!safety.allowed) {
-      await recordFallback("safety_block");
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({
-              handled: false,
-              reason: "safety_block",
-              detail: safety.patternId,
-            }),
-          },
-        ],
-      };
-    }
-
-    const cwd = args.context?.cwd ?? process.cwd();
-    const rules = await loadRules();
-    const match = await classify(command, rules, { cwd });
-    if (!match) {
-      await recordFallback("no_match");
-      return {
-        content: [{ type: "text", text: JSON.stringify({ handled: false, reason: "no_match" }) }],
-      };
-    }
-
-    const safety2 = validate(match.command);
-    if (!safety2.allowed) {
-      await recordFallback("safety_block");
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({
-              handled: false,
-              reason: "safety_block",
-              detail: safety2.patternId,
-            }),
-          },
-        ],
-      };
-    }
-
-    const result = await execShell(match.command, { cwd, captureOnly: true });
-    const tokens = estimateTokensSaved(command, result, match.rule);
-    await recordHit(match.rule, command, result);
-
+    const result = await routeOnce(command, { cwd: args.context?.cwd });
     return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            handled: true,
-            stdout: result.stdout,
-            stderr: result.stderr,
-            exit_code: result.exitCode,
-            rule_id: match.rule.id,
-            matched_via: match.matchedVia,
-            tokens_saved_estimate: tokens,
-          }),
-        },
-      ],
+      content: [{ type: "text", text: JSON.stringify(result) }],
     };
   });
 

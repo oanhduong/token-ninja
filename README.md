@@ -107,6 +107,15 @@ it can find on your machine — Claude Code (`~/.claude.json`), Cursor
 AI tool, it already knows to consult token-ninja before spending tokens on
 commands like `git status`, `npm test`, or `docker ps`.
 
+For **Claude Code** specifically, the same postinstall also writes a
+`PreToolUse` Bash hook into `~/.claude/settings.json`. Claude Code's built-in
+`Bash` tool normally runs shell commands unconditionally; the hook intercepts
+each call, passes the command through `ninja route`, and — if a local rule
+matched — blocks the Bash call and returns the captured output back to
+Claude. Without the hook, Claude would ignore the MCP server in favor of
+Bash; with it, deterministic commands never reach the model. Skip with
+`ninja setup --no-hook`.
+
 Existing MCP entries are preserved, each file is backed up once
 (`*.token-ninja.bak`) before the first write, and malformed configs are
 skipped safely instead of failing the install.
@@ -117,7 +126,8 @@ skipped safely instead of failing the install.
 > `TOKEN_NINJA_SKIP_POSTINSTALL=1 npm install -g token-ninja`
 >
 > **Roll back any time:** `ninja uninstall` — removes the MCP entry from
-> every client config it wrote to.
+> every client config it wrote to, and the Bash hook from
+> `~/.claude/settings.json`.
 
 ## Quickstart
 
@@ -317,10 +327,46 @@ Use `ninja rules test "your command"` to dry-run the classifier against any inpu
 
 ## MCP integration
 
-token-ninja talks to your AI tool through the Model Context Protocol: it
+token-ninja talks to most AI tools through the Model Context Protocol: it
 exposes a single stdio tool (`maybe_execute_locally`) that the agent calls
 on every command it's about to run. If token-ninja recognizes the command,
 it answers with the output directly; if not, the agent proceeds as usual.
+
+### Claude Code: MCP + PreToolUse Bash hook
+
+Claude Code's built-in `Bash` tool is separate from its MCP tool list, and
+the model has no default instruction to consult MCP tools before running
+shell commands. The MCP server alone therefore won't save tokens on `git
+status`-class calls. To close that gap, `ninja setup` also installs a
+`PreToolUse` Bash hook at `~/.claude/settings.json`:
+
+```jsonc
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "node /abs/path/to/hooks/claude-code-bash.cjs" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+On every Bash call, the hook runs `ninja route --cwd <cwd> <command>`. On a
+match it returns `{decision:"block", reason:"..."}` with the captured output
+in the reason — Claude reads that output and answers the user without the
+Bash tool ever executing. On a miss (or any unexpected error) the hook
+exits 0 and Bash proceeds normally, so token-ninja is never a single point
+of failure for the shell.
+
+Install control:
+
+- `ninja setup --no-hook` — skip just the Bash hook (MCP still registered).
+- `ninja setup --no-mcp` — skip just MCP (hook still installed).
+- `ninja uninstall` — removes both, plus any shell-rc shims.
 
 **You don't need to configure this manually.** `ninja setup` (the postinstall
 hook) merges an entry like the one below into:
