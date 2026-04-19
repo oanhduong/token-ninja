@@ -3,7 +3,8 @@ import { classify } from "./classifier.js";
 import { execShell } from "./executor.js";
 import { fallbackToAi } from "./fallback.js";
 import { validate } from "../safety/validator.js";
-import { recordHit, recordFallback } from "../telemetry/stats.js";
+import { estimateTokensSaved, recordHit, recordFallback } from "../telemetry/stats.js";
+import { loadConfig } from "../config/user-config.js";
 import { logger } from "../utils/logger.js";
 
 export interface RouterOpts {
@@ -86,6 +87,15 @@ export async function runRouter(input: string, opts: RouterOpts): Promise<number
         duration_ms: result.durationMs,
       }) + "\n"
     );
+  } else {
+    const cfg = await loadConfig();
+    if (cfg.stats?.show_savings_on_exit !== false) {
+      const saved = estimateTokensSaved(input, result, match.rule);
+      const color = process.stderr.isTTY ? (c: string, s: string) => `\x1b[${c}m${s}\x1b[0m` : (_c: string, s: string) => s;
+      process.stderr.write(
+        `${color("32", "ninja")} saved ~${saved.toLocaleString("en-US")} tokens (${match.rule.id})\n`
+      );
+    }
   }
   return result.exitCode;
 }

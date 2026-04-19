@@ -2,8 +2,6 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import { detectAiTool } from "../adapters/index.js";
-import { logger } from "../utils/logger.js";
 
 export interface Config {
   default_ai_tool?: string;
@@ -22,7 +20,7 @@ export const DEFAULT_CONFIG: Config = {
   custom_rules_dir: undefined,
   stats: {
     enabled: true,
-    show_savings_on_exit: false,
+    show_savings_on_exit: true,
     verbose: false,
   },
 };
@@ -55,35 +53,11 @@ export async function saveConfig(cfg: Config): Promise<void> {
   cached = cfg;
 }
 
+/**
+ * `init` is kept as a compatibility alias for `setup`. Both perform the full
+ * auto-install so users who remember the old name still get the new flow.
+ */
 export async function runInit(): Promise<void> {
-  const dir = configDir();
-  await mkdir(dir, { recursive: true });
-  await mkdir(join(dir, "rules"), { recursive: true });
-
-  const detected = await detectAiTool();
-  const cfg: Config = {
-    ...DEFAULT_CONFIG,
-    default_ai_tool: detected ?? DEFAULT_CONFIG.default_ai_tool,
-    custom_rules_dir: join(dir, "rules"),
-  };
-  await saveConfig(cfg);
-
-  const msg = [
-    `token-ninja configured.`,
-    `  config      : ${configPath()}`,
-    `  AI tool     : ${cfg.default_ai_tool}${detected ? " (detected)" : " (default — override in config.yaml)"}`,
-    `  user rules  : ${cfg.custom_rules_dir}`,
-    ``,
-    `Add a shell function (recommended) so "claude ..." runs through ninja:`,
-    `  # zsh / bash`,
-    `  ninja shim claude >> ~/.zshrc    # or ~/.bashrc`,
-    ``,
-    `Try it:`,
-    `  ninja "git status"           # runs locally, zero tokens`,
-    `  ninja "build the project"    # detects build tool from repo`,
-    `  ninja stats                  # cumulative savings`,
-    `  ninja rules test "git diff"  # see which rule matches`,
-  ].join("\n");
-  process.stdout.write(msg + "\n");
-  logger.debug("init complete");
+  const { runSetup } = await import("../setup/index.js");
+  await runSetup();
 }

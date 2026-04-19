@@ -52,6 +52,21 @@ export async function detectAiTool(): Promise<string | null> {
   return null;
 }
 
+/**
+ * Detect every supported AI tool that's on PATH. Preserves the ADAPTERS
+ * priority order so the first entry is also what `detectAiTool()` returns.
+ */
+export async function detectAllInstalledAiTools(): Promise<string[]> {
+  const found: string[] = [];
+  for (const a of ADAPTERS) {
+    if (!a.bin) continue;
+    if (a.detect ? a.detect() : await onPath(a.bin)) {
+      found.push(a.id);
+    }
+  }
+  return found;
+}
+
 export function adapterFor(id: string): AiAdapter | undefined {
   return ADAPTERS.find((a) => a.id === id || a.bin === id);
 }

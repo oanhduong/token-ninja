@@ -33,6 +33,7 @@
   },
   "files": [
     "dist",
+    "scripts/post-install.mjs",
     "README.md",
     "LICENSE"
   ],
@@ -47,6 +48,7 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "postinstall": "node scripts/post-install.mjs",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

@@ -2,12 +2,14 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runRouter } from "../src/router/index.js";
 
 let stdout = "";
+let stderr = "";
 let origWrite: typeof process.stdout.write;
 let origErrWrite: typeof process.stderr.write;
 let origExit: typeof process.exit;
 
 beforeEach(() => {
   stdout = "";
+  stderr = "";
   origWrite = process.stdout.write;
   origErrWrite = process.stderr.write;
   origExit = process.exit;
@@ -15,7 +17,10 @@ beforeEach(() => {
     stdout += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
     return true;
   }) as typeof process.stdout.write;
-  process.stderr.write = (() => true) as typeof process.stderr.write;
+  process.stderr.write = ((chunk: string | Uint8Array) => {
+    stderr += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
+    return true;
+  }) as typeof process.stderr.write;
 });
 
 afterEach(() => {
@@ -69,5 +74,17 @@ describe("runRouter", () => {
     // verbose sets logger state but doesn't throw; exercise the path
     const code = await runRouter("git status", { verbose: true, dryRun: true });
     expect(code).toBe(0);
+  });
+
+  it("prints a one-line savings hint on stderr after a local hit", async () => {
+    const code = await runRouter("pwd", { fallback: false });
+    expect(code).toBe(0);
+    expect(stderr).toMatch(/ninja.*saved ~\d[\d,]* tokens/);
+  });
+
+  it("suppresses the savings hint in JSON mode", async () => {
+    const code = await runRouter("pwd", { fallback: false, json: true });
+    expect(code).toBe(0);
+    expect(stderr).not.toMatch(/saved ~/);
   });
 });

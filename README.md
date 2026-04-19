@@ -85,20 +85,32 @@ for the work that actually needs a model.
 npm install -g token-ninja
 ```
 
+That's it. The postinstall hook detects your shell (`bash`/`zsh`/`fish`) and the AI
+tools on your `PATH` (`claude`, `codex`, `cursor-agent`, `aider`, `gemini`,
+`continue`), and appends a small managed block to your rc file so calls to those
+tools transparently run through `ninja` first. **Open a new terminal and keep
+using your AI tool as before** — deterministic commands run locally and print a
+one-line hint like `ninja saved ~512 tokens (git-status)`, everything else falls
+through to the AI, unchanged.
+
 Requires **Node 20+**.
+
+- Re-run auto-setup any time: `ninja setup`
+- Preview without writing: `ninja setup --dry-run`
+- Roll back: `ninja uninstall`
+- Opt out of the postinstall hook: `TOKEN_NINJA_SKIP_POSTINSTALL=1 npm i -g token-ninja`
 
 ## Quickstart
 
 ```bash
-# One-time setup: detects your installed AI tool, writes ~/.config/token-ninja/config.yaml
-ninja init
+# After install, just use your AI tool normally. For example:
+claude "git status"            # ← runs locally, zero tokens
+claude "build the project"     # ← reads package.json / Cargo.toml and picks the right command
+claude "rm -rf /"              # ← blocked — falls back to real claude for human review
+claude "explain this error: …" # ← doesn't match any rule — passes straight through
 
-# Try it
-ninja "git status"             # runs locally, zero tokens
+# Or invoke ninja directly (same router):
 ninja "what branch am I on"    # natural-language → git branch --show-current
-ninja "build the project"      # reads package.json / Cargo.toml / etc and picks the right command
-ninja "rm -rf /"               # blocked — falls back to your AI for review
-ninja "explain this error: …"  # doesn't match any rule — passes through to your AI
 
 # See the damage report
 ninja stats
@@ -108,26 +120,37 @@ ninja stats
 
 ### Make it transparent with shell shims
 
-Install a shell function so every call to `claude …`, `codex …`, etc. automatically
-routes through ninja first. Ninja handles the command locally when it can, or falls
-back to the real binary when it can't.
+`npm install -g token-ninja` runs `ninja setup` for you via a postinstall hook,
+which appends a managed block to your shell rc file:
 
-```bash
-# zsh / bash
-ninja shim claude >> ~/.zshrc
-source ~/.zshrc
-
-# fish
-ninja shim claude --shell fish >> ~/.config/fish/config.fish
-
-# PowerShell
-ninja shim claude --shell powershell >> $PROFILE
-
-# Now this is free for any known command, and only hits the LLM when needed:
-claude "git status"
+```
+# >>> token-ninja >>>
+# managed — regenerate with: ninja setup · remove with: ninja uninstall
+claude() { … ninja --ai claude -- "$@" … }
+codex()  { … ninja --ai codex  -- "$@" … }
+# <<< token-ninja <<<
 ```
 
-Available shims: `claude`, `codex`, `cursor-agent`, `aider`, `gemini`, `continue`.
+From then on every call to `claude …`, `codex …`, etc. routes through ninja first.
+Ninja handles the command locally when it can, or falls back to the real binary
+when it can't. The original rc file is backed up once to `~/.zshrc.token-ninja.bak`.
+
+```bash
+ninja setup                  # (re)install — idempotent, safe to run any time
+ninja setup --dry-run        # preview the block without writing
+ninja setup --tool claude    # only hook specific tools
+ninja setup --shell fish     # force a specific shell
+ninja uninstall              # remove the managed block cleanly
+```
+
+If you prefer to manage the rc file yourself, the old flow still works:
+
+```bash
+ninja shim claude >> ~/.zshrc
+source ~/.zshrc
+```
+
+Supported tools: `claude`, `codex`, `cursor-agent`, `aider`, `gemini`, `continue`.
 
 ### Writing your own rules
 

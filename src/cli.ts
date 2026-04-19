@@ -3,6 +3,7 @@ import { Command } from "commander";
 import { runRouter } from "./router/index.js";
 import { startMcpServer } from "./mcp/server.js";
 import { runInit } from "./config/user-config.js";
+import { runSetup, runUninstall } from "./setup/index.js";
 import { listRules, testRule } from "./rules/loader.js";
 import { printStats } from "./telemetry/stats.js";
 import { generateShim } from "./adapters/index.js";
@@ -42,8 +43,37 @@ program
   });
 
 program
+  .command("setup")
+  .description("Auto-install: detect AI tools, write shell shims into your rc file, create config")
+  .option("--shell <name>", "shell to target (bash|zsh|fish); auto-detect by default")
+  .option("--tool <id>", "hook a specific tool (repeatable); default = all detected", collect, [])
+  .option("--quiet", "minimal output", false)
+  .action(async (opts: { shell?: string; tool: string[]; quiet: boolean }, cmd) => {
+    // The program-level `--dry-run` is hoisted by commander; merge so users
+    // can pass it either before or after the subcommand name.
+    const merged = cmd.optsWithGlobals();
+    const code = await runSetup({
+      shell: opts.shell,
+      tools: opts.tool,
+      dryRun: merged.dryRun === true,
+      quiet: opts.quiet,
+    });
+    process.exit(code);
+  });
+
+program
+  .command("uninstall")
+  .description("Remove the token-ninja managed block from your shell rc file")
+  .option("--shell <name>", "shell to target (bash|zsh|fish); auto-detect by default")
+  .option("--quiet", "minimal output", false)
+  .action(async (opts: { shell?: string; quiet: boolean }) => {
+    const code = await runUninstall({ shell: opts.shell, quiet: opts.quiet });
+    process.exit(code);
+  });
+
+program
   .command("init")
-  .description("Interactive setup: detect AI tools, create config, suggest shim install")
+  .description("Alias for `setup` (compatibility with earlier releases)")
   .action(async () => {
     await runInit();
   });
@@ -81,6 +111,10 @@ rules
   .action(async (input: string[]) => {
     await testRule(input.join(" "));
   });
+
+function collect(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
 
 program.parseAsync(process.argv).catch((err) => {
   logger.error(err instanceof Error ? err.message : String(err));
