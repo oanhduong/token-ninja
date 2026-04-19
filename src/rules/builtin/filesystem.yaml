@@ -1,0 +1,180 @@
+domain: filesystem
+rules:
+  - id: cat
+    match:
+      type: prefix
+      patterns: ["cat -n", "cat -A", "cat"]
+    action: { type: shell, command: "cat", args_passthrough: true }
+    safety: read-only
+
+  - id: tac
+    match:
+      type: prefix
+      patterns: ["tac"]
+    action: { type: shell, command: "tac", args_passthrough: true }
+    safety: read-only
+
+  - id: bat
+    match:
+      type: prefix
+      patterns: ["bat --plain", "bat -p", "bat"]
+    action: { type: shell, command: "bat", args_passthrough: true }
+    safety: read-only
+
+  - id: head
+    match:
+      type: prefix
+      patterns: ["head -n", "head -c", "head"]
+    action: { type: shell, command: "head", args_passthrough: true }
+    safety: read-only
+
+  - id: tail
+    match:
+      type: prefix
+      patterns: ["tail -f", "tail -F", "tail -n", "tail -c", "tail"]
+    action: { type: shell, command: "tail", args_passthrough: true }
+    safety: read-only
+
+  - id: less
+    match:
+      type: prefix
+      patterns: ["less", "more"]
+    action:
+      type: passthrough
+      reason: "pager is interactive; use ai tool or cat the file instead"
+    safety: read-only
+
+  - id: wc
+    match:
+      type: prefix
+      patterns: ["wc -l", "wc -w", "wc -c", "wc -m", "wc"]
+    action: { type: shell, command: "wc", args_passthrough: true }
+    safety: read-only
+
+  - id: sort
+    match:
+      type: prefix
+      patterns: ["sort -r", "sort -n", "sort -nr", "sort -u", "sort -k", "sort -t", "sort -h", "sort -R", "sort"]
+    action: { type: shell, command: "sort", args_passthrough: true }
+    safety: read-only
+
+  - id: uniq
+    match:
+      type: prefix
+      patterns: ["uniq -c", "uniq -d", "uniq -u", "uniq"]
+    action: { type: shell, command: "uniq", args_passthrough: true }
+    safety: read-only
+
+  - id: cut
+    match:
+      type: prefix
+      patterns: ["cut -d", "cut -f", "cut -c", "cut"]
+    action: { type: shell, command: "cut", args_passthrough: true }
+    safety: read-only
+
+  - id: paste
+    match:
+      type: prefix
+      patterns: ["paste -d", "paste -s", "paste"]
+    action: { type: shell, command: "paste", args_passthrough: true }
+    safety: read-only
+
+  - id: join
+    match:
+      type: prefix
+      patterns: ["join"]
+    action: { type: shell, command: "join", args_passthrough: true }
+    safety: read-only
+
+  - id: comm
+    match:
+      type: prefix
+      patterns: ["comm"]
+    action: { type: shell, command: "comm", args_passthrough: true }
+    safety: read-only
+
+  - id: diff
+    match:
+      type: prefix
+      patterns: ["diff -u", "diff -r", "diff -q", "diff -y", "diff -N", "diff -Naur", "diff"]
+    action: { type: shell, command: "diff", args_passthrough: true }
+    safety: read-only
+
+  - id: cmp
+    match:
+      type: prefix
+      patterns: ["cmp"]
+    action: { type: shell, command: "cmp", args_passthrough: true }
+    safety: read-only
+
+  - id: md5sum
+    match:
+      type: prefix
+      patterns: ["md5sum", "md5"]
+    action: { type: shell, command: "md5sum", args_passthrough: true }
+    safety: read-only
+
+  - id: sha256sum
+    match:
+      type: prefix
+      patterns: ["sha256sum", "sha1sum", "sha512sum", "shasum"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: hash-passthrough
+    match:
+      type: regex
+      patterns: ["^(sha\\d+sum|shasum)\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: du
+    match:
+      type: prefix
+      patterns: ["du -sh", "du -h", "du -hs", "du -s", "du -ah", "du -ch", "du"]
+    action: { type: shell, command: "du", args_passthrough: true }
+    safety: read-only
+
+  - id: df
+    match:
+      type: exact
+      patterns: ["df", "df -h", "df -H", "df -i", "df -T", "df -a"]
+    action: { type: shell, command: "df -h" }
+    safety: read-only
+
+  - id: df-path
+    match:
+      type: prefix
+      patterns: ["df -h", "df"]
+    action: { type: shell, command: "df", args_passthrough: true }
+    safety: read-only
+
+  - id: find
+    match:
+      type: prefix
+      patterns: ["find"]
+    action: { type: shell, command: "find", args_passthrough: true }
+    safety: read-only
+
+  - id: locate
+    match:
+      type: prefix
+      patterns: ["locate"]
+    action: { type: shell, command: "locate", args_passthrough: true }
+    safety: read-only
+
+  - id: tree
+    match:
+      type: prefix
+      patterns: ["tree -L", "tree -a", "tree -d", "tree -I", "tree"]
+    action: { type: shell, command: "tree", args_passthrough: true }
+    safety: read-only
+
+  - id: ncdu
+    match:
+      type: prefix
+      patterns: ["ncdu"]
+    action:
+      type: passthrough
+      reason: "ncdu is interactive TUI"
+    safety: read-only

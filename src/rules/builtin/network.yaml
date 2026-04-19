@@ -1,0 +1,134 @@
+domain: network
+rules:
+  - id: ping
+    match:
+      type: prefix
+      patterns: ["ping -c", "ping"]
+    action: { type: shell, command: "ping", args_passthrough: true }
+    safety: read-only
+
+  - id: traceroute
+    match:
+      type: prefix
+      patterns: ["traceroute", "tracepath", "mtr -n -c 5", "mtr -r -c 5"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: traceroute-passthrough
+    match:
+      type: regex
+      patterns: ["^(traceroute|tracepath)\\s+(\\S+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: nslookup
+    match:
+      type: prefix
+      patterns: ["nslookup"]
+    action: { type: shell, command: "nslookup", args_passthrough: true }
+    safety: read-only
+
+  - id: dig
+    match:
+      type: prefix
+      patterns: ["dig +short", "dig +noall", "dig @", "dig"]
+    action: { type: shell, command: "dig", args_passthrough: true }
+    safety: read-only
+
+  - id: host
+    match:
+      type: prefix
+      patterns: ["host -t", "host"]
+    action: { type: shell, command: "host", args_passthrough: true }
+    safety: read-only
+
+  - id: whois
+    match:
+      type: prefix
+      patterns: ["whois"]
+    action: { type: shell, command: "whois", args_passthrough: true }
+    safety: read-only
+
+  - id: ip
+    match:
+      type: exact
+      patterns: ["ip a", "ip addr", "ip addr show", "ip r", "ip route", "ip link", "ip -4 a", "ip -6 a"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: ip-passthrough
+    match:
+      type: regex
+      patterns: ["^ip\\s+(?:-[46])?\\s*(a|addr|addr\\s+show|r|route|link|neigh)(?:\\s+.*)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: ifconfig
+    match:
+      type: exact
+      patterns: ["ifconfig", "ifconfig -a"]
+    action: { type: shell, command: "ifconfig" }
+    safety: read-only
+
+  - id: netstat
+    match:
+      type: prefix
+      patterns: ["netstat -tnlp", "netstat -tulpn", "netstat -an", "netstat -rn", "netstat"]
+    action: { type: shell, command: "netstat", args_passthrough: true }
+    safety: read-only
+
+  - id: ss
+    match:
+      type: prefix
+      patterns: ["ss -tlnp", "ss -tulpn", "ss -an", "ss -s", "ss"]
+    action: { type: shell, command: "ss", args_passthrough: true }
+    safety: read-only
+
+  - id: lsof-net
+    match:
+      type: prefix
+      patterns: ["lsof -i", "lsof -P -i"]
+    action: { type: shell, command: "lsof", args_passthrough: true }
+    safety: read-only
+
+  - id: curl-head
+    match:
+      type: regex
+      patterns:
+        - "^curl\\s+-I\\s+(https?://\\S+)$"
+        - "^curl\\s+--head\\s+(https?://\\S+)$"
+    action: { type: shell, command: "curl -I {{arg1}}" }
+    safety: write-network
+
+  - id: curl-get
+    match:
+      type: regex
+      patterns:
+        - "^curl\\s+-s\\s+(https?://\\S+)$"
+        - "^curl\\s+-sL\\s+(https?://\\S+)$"
+        - "^curl\\s+-Ls\\s+(https?://\\S+)$"
+        - "^curl\\s+(https?://\\S+)$"
+    action: { type: shell, command: "curl -sL {{arg1}}" }
+    safety: write-network
+
+  - id: wget-spider
+    match:
+      type: regex
+      patterns:
+        - "^wget\\s+--spider\\s+(https?://\\S+)$"
+    action: { type: shell, command: "wget --spider {{arg1}}" }
+    safety: write-network
+
+  - id: arp
+    match:
+      type: exact
+      patterns: ["arp", "arp -a", "arp -n"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: arp-passthrough
+    match:
+      type: regex
+      patterns: ["^arp(\\s+-[an]+)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only

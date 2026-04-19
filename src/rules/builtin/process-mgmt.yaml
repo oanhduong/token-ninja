@@ -1,0 +1,73 @@
+domain: process-mgmt
+rules:
+  - id: ps
+    match:
+      type: exact
+      patterns: ["ps", "ps aux", "ps -ef", "ps -f", "ps -fu", "ps auxf", "ps -ejH"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: ps-passthrough
+    match:
+      type: regex
+      patterns: ["^ps(?:\\s+.+)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: top-one-shot
+    match:
+      type: exact
+      patterns: ["top -b -n 1", "top -bn1"]
+    action: { type: shell, command: "top -b -n 1" }
+    safety: read-only
+
+  - id: top-interactive
+    match:
+      type: exact
+      patterns: ["top", "htop"]
+    action:
+      type: passthrough
+      reason: "top/htop are interactive TUIs"
+    safety: read-only
+
+  - id: pgrep
+    match:
+      type: prefix
+      patterns: ["pgrep -f", "pgrep -l", "pgrep -a", "pgrep"]
+    action: { type: shell, command: "pgrep", args_passthrough: true }
+    safety: read-only
+
+  - id: pidof
+    match:
+      type: prefix
+      patterns: ["pidof"]
+    action: { type: shell, command: "pidof", args_passthrough: true }
+    safety: read-only
+
+  - id: pstree
+    match:
+      type: prefix
+      patterns: ["pstree"]
+    action: { type: shell, command: "pstree", args_passthrough: true }
+    safety: read-only
+
+  - id: kill-list
+    match:
+      type: exact
+      patterns: ["kill -l", "kill -L"]
+    action: { type: shell, command: "kill -l" }
+    safety: read-only
+
+  - id: nice-cmd
+    match:
+      type: prefix
+      patterns: ["nice -n"]
+    action: { type: shell, command: "nice", args_passthrough: true }
+    safety: read-only
+
+  - id: renice
+    match:
+      type: prefix
+      patterns: ["renice"]
+    action: { type: shell, command: "renice", args_passthrough: true }
+    safety: write-confined

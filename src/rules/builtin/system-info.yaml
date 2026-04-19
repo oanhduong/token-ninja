@@ -1,0 +1,61 @@
+domain: system-info
+rules:
+  - id: cpu-mem
+    match:
+      type: exact
+      patterns: ["lscpu", "lsmem", "free", "free -h", "free -m", "free -g", "free -w", "vmstat", "vmstat 1 1"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: cpu-mem-passthrough
+    match:
+      type: regex
+      patterns: ["^(lscpu|lsmem|free|vmstat)(?:\\s+.+)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: block-devices
+    match:
+      type: exact
+      patterns: ["lsblk", "lsblk -f", "lsblk -a", "lspci", "lsusb", "lsof", "lshw", "lshw -short", "dmidecode"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: block-devices-passthrough
+    match:
+      type: regex
+      patterns: ["^(lsblk|lspci|lsusb|lshw)(?:\\s+.+)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: io-stats
+    match:
+      type: exact
+      patterns: ["iostat", "iostat 1 1", "mpstat", "mpstat 1 1", "sar", "sar -u 1 1"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: systemctl-status
+    match:
+      type: regex
+      patterns:
+        - "^systemctl\\s+status\\s+--user(?:\\s+.+)?$"
+        - "^systemctl\\s+--user\\s+status(?:\\s+.+)?$"
+        - "^systemctl\\s+--user\\s+list-units(?:\\s+.+)?$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: journalctl-user
+    match:
+      type: regex
+      patterns:
+        - "^journalctl\\s+--user(?:\\s+.*)?$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: launchctl-list
+    match:
+      type: exact
+      patterns: ["launchctl list"]
+    action: { type: shell, command: "launchctl list" }
+    safety: read-only

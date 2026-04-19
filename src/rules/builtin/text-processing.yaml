@@ -1,0 +1,190 @@
+domain: text-processing
+rules:
+  - id: grep
+    match:
+      type: prefix
+      patterns:
+        - "grep -r"
+        - "grep -R"
+        - "grep -i"
+        - "grep -v"
+        - "grep -E"
+        - "grep -F"
+        - "grep -n"
+        - "grep -l"
+        - "grep -c"
+        - "grep -rn"
+        - "grep -rni"
+        - "grep -rnI"
+        - "grep -o"
+        - "grep -w"
+        - "grep -A"
+        - "grep -B"
+        - "grep -C"
+        - "grep"
+    action: { type: shell, command: "grep", args_passthrough: true }
+    safety: read-only
+
+  - id: egrep
+    match:
+      type: prefix
+      patterns: ["egrep", "fgrep"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: egrep-passthrough
+    match:
+      type: regex
+      patterns: ["^(egrep|fgrep)\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: ripgrep
+    match:
+      type: prefix
+      patterns:
+        - "rg --files"
+        - "rg -i"
+        - "rg -l"
+        - "rg -n"
+        - "rg -v"
+        - "rg -w"
+        - "rg -c"
+        - "rg -A"
+        - "rg -B"
+        - "rg -C"
+        - "rg --type"
+        - "rg -t"
+        - "rg --glob"
+        - "rg -g"
+        - "rg"
+    action: { type: shell, command: "rg", args_passthrough: true }
+    safety: read-only
+
+  - id: sed-print
+    match:
+      type: regex
+      patterns:
+        - "^sed\\s+-n\\s+(.+)$"
+    action: { type: shell, command: "sed -n {{arg1}}" }
+    safety: read-only
+
+  - id: sed-substitute-stdin
+    match:
+      type: regex
+      patterns:
+        - "^sed\\s+'s/[^/]*/[^/]*/g?'\\s*$"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: awk
+    match:
+      type: prefix
+      patterns: ["awk"]
+    action: { type: shell, command: "awk", args_passthrough: true }
+    safety: read-only
+
+  - id: tr
+    match:
+      type: prefix
+      patterns: ["tr -d", "tr -s", "tr -c", "tr"]
+    action: { type: shell, command: "tr", args_passthrough: true }
+    safety: read-only
+
+  - id: fold
+    match:
+      type: prefix
+      patterns: ["fold -w", "fold -s", "fold"]
+    action: { type: shell, command: "fold", args_passthrough: true }
+    safety: read-only
+
+  - id: fmt
+    match:
+      type: prefix
+      patterns: ["fmt"]
+    action: { type: shell, command: "fmt", args_passthrough: true }
+    safety: read-only
+
+  - id: nl
+    match:
+      type: prefix
+      patterns: ["nl"]
+    action: { type: shell, command: "nl", args_passthrough: true }
+    safety: read-only
+
+  - id: rev
+    match:
+      type: prefix
+      patterns: ["rev"]
+    action: { type: shell, command: "rev", args_passthrough: true }
+    safety: read-only
+
+  - id: column
+    match:
+      type: prefix
+      patterns: ["column -t", "column -s", "column"]
+    action: { type: shell, command: "column", args_passthrough: true }
+    safety: read-only
+
+  - id: xxd
+    match:
+      type: prefix
+      patterns: ["xxd -p", "xxd -l", "xxd"]
+    action: { type: shell, command: "xxd", args_passthrough: true }
+    safety: read-only
+
+  - id: hexdump
+    match:
+      type: prefix
+      patterns: ["hexdump -C", "hexdump -c", "hexdump"]
+    action: { type: shell, command: "hexdump", args_passthrough: true }
+    safety: read-only
+
+  - id: od
+    match:
+      type: prefix
+      patterns: ["od -c", "od -x", "od -A", "od"]
+    action: { type: shell, command: "od", args_passthrough: true }
+    safety: read-only
+
+  - id: strings
+    match:
+      type: prefix
+      patterns: ["strings"]
+    action: { type: shell, command: "strings", args_passthrough: true }
+    safety: read-only
+
+  - id: iconv
+    match:
+      type: prefix
+      patterns: ["iconv"]
+    action: { type: shell, command: "iconv", args_passthrough: true }
+    safety: read-only
+
+  - id: jq
+    match:
+      type: prefix
+      patterns: ["jq -r", "jq -c", "jq -s", "jq"]
+    action: { type: shell, command: "jq", args_passthrough: true }
+    safety: read-only
+
+  - id: yq
+    match:
+      type: prefix
+      patterns: ["yq -r", "yq"]
+    action: { type: shell, command: "yq", args_passthrough: true }
+    safety: read-only
+
+  - id: expand-unexpand
+    match:
+      type: prefix
+      patterns: ["expand", "unexpand", "pr"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: expand-passthrough
+    match:
+      type: regex
+      patterns: ["^(expand|unexpand|pr)\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only

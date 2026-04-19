@@ -1,0 +1,92 @@
+domain: archive
+rules:
+  - id: tar-list
+    match:
+      type: prefix
+      patterns: ["tar -tf", "tar -tvf", "tar tf", "tar tvf"]
+    action: { type: shell, command: "tar", args_passthrough: true }
+    safety: read-only
+
+  - id: tar-extract
+    match:
+      type: prefix
+      patterns: ["tar -xf", "tar -xzf", "tar -xjf", "tar -xJf", "tar -xvf", "tar -xzvf", "tar xf", "tar xzf"]
+    action: { type: shell, command: "tar", args_passthrough: true }
+    safety: write-confined
+
+  - id: tar-create
+    match:
+      type: prefix
+      patterns: ["tar -czf", "tar -cjf", "tar -cJf", "tar -cf", "tar -cvf", "tar -czvf", "tar cf", "tar czf"]
+    action: { type: shell, command: "tar", args_passthrough: true }
+    safety: write-confined
+
+  - id: zip-list
+    match:
+      type: prefix
+      patterns: ["unzip -l", "unzip -v"]
+    action: { type: shell, command: "unzip", args_passthrough: true }
+    safety: read-only
+
+  - id: zip
+    match:
+      type: prefix
+      patterns: ["zip -r", "zip -9", "zip -0", "zip"]
+    action: { type: shell, command: "zip", args_passthrough: true }
+    safety: write-confined
+
+  - id: unzip
+    match:
+      type: prefix
+      patterns: ["unzip -o", "unzip -d", "unzip"]
+    action: { type: shell, command: "unzip", args_passthrough: true }
+    safety: write-confined
+
+  - id: gzip
+    match:
+      type: prefix
+      patterns: ["gzip -9", "gzip -d", "gzip -k", "gzip -l", "gzip -t", "gzip"]
+    action: { type: shell, command: "gzip", args_passthrough: true }
+    safety: write-confined
+
+  - id: gunzip
+    match:
+      type: prefix
+      patterns: ["gunzip -k", "gunzip"]
+    action: { type: shell, command: "gunzip", args_passthrough: true }
+    safety: write-confined
+
+  - id: bzip2
+    match:
+      type: prefix
+      patterns: ["bzip2 -d", "bzip2 -k", "bzip2 -t", "bzip2"]
+    action: { type: shell, command: "bzip2", args_passthrough: true }
+    safety: write-confined
+
+  - id: bunzip2
+    match:
+      type: prefix
+      patterns: ["bunzip2 -k", "bunzip2"]
+    action: { type: shell, command: "bunzip2", args_passthrough: true }
+    safety: write-confined
+
+  - id: xz
+    match:
+      type: prefix
+      patterns: ["xz -d", "xz -k", "xz -l", "xz -t", "xz"]
+    action: { type: shell, command: "xz", args_passthrough: true }
+    safety: write-confined
+
+  - id: unxz
+    match:
+      type: prefix
+      patterns: ["unxz -k", "unxz"]
+    action: { type: shell, command: "unxz", args_passthrough: true }
+    safety: write-confined
+
+  - id: 7z
+    match:
+      type: prefix
+      patterns: ["7z l", "7z x", "7z a", "7z t"]
+    action: { type: shell, command: "7z", args_passthrough: true }
+    safety: write-confined

@@ -1,0 +1,61 @@
+domain: shell-advanced
+rules:
+  - id: xargs
+    match:
+      type: prefix
+      patterns: ["xargs"]
+    action: { type: shell, command: "xargs", args_passthrough: true }
+    safety: read-only
+
+  - id: tee
+    match:
+      type: prefix
+      patterns: ["tee -a", "tee"]
+    action: { type: shell, command: "tee", args_passthrough: true }
+    safety: write-confined
+
+  - id: wait-jobs
+    match:
+      type: exact
+      patterns: ["jobs", "jobs -l"]
+    action: { type: shell, command: "jobs" }
+    safety: read-only
+
+  - id: time-cmd
+    match:
+      type: prefix
+      patterns: ["time"]
+    action: { type: shell, command: "time", args_passthrough: true }
+    safety: read-only
+
+  - id: timeout
+    match:
+      type: regex
+      patterns: ["^timeout\\s+(\\d+[smh]?)\\s+(.+)$"]
+    action: { type: shell, command: "timeout {{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: watch
+    match:
+      type: prefix
+      patterns: ["watch -n"]
+    action:
+      type: passthrough
+      reason: "watch is interactive; don't trap it locally"
+    safety: read-only
+
+  - id: tput
+    match:
+      type: prefix
+      patterns: ["tput"]
+    action: { type: shell, command: "tput", args_passthrough: true }
+    safety: read-only
+
+  - id: getopts-examples
+    match:
+      type: regex
+      patterns: ["^set\\s+-[exuo]+$"]
+    action:
+      type: passthrough
+      reason: "`set -e` etc only affect the parent shell"
+    safety: read-only

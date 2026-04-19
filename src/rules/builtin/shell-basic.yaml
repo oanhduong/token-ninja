@@ -1,0 +1,270 @@
+domain: shell-basic
+rules:
+  - id: ls
+    match:
+      type: exact
+      patterns: ["ls", "ls -l", "ls -la", "ls -lah", "ls -lh", "ls -lS", "ls -lt", "ls -ltr", "ls -R", "ls -1", "ls -A", "ls -a", "ls --color"]
+    action: { type: shell, command: "ls --color=auto" }
+    safety: read-only
+
+  - id: ls-with-path
+    match:
+      type: prefix
+      patterns: ["ls -la", "ls -l", "ls -lh", "ls -a", "ls -A", "ls -R", "ls"]
+    action: { type: shell, command: "ls --color=auto {{input}}" }
+    safety: read-only
+
+  - id: pwd
+    match:
+      type: exact
+      patterns: ["pwd", "pwd -P"]
+    action: { type: shell, command: "pwd" }
+    safety: read-only
+
+  - id: whoami
+    match:
+      type: exact
+      patterns: ["whoami", "id -un"]
+    action: { type: shell, command: "whoami" }
+    safety: read-only
+
+  - id: id
+    match:
+      type: exact
+      patterns: ["id", "id -a", "id -g", "id -G", "id -u", "groups"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: id-passthrough
+    match:
+      type: prefix
+      patterns: ["id", "groups"]
+    action: { type: shell, command: "id", args_passthrough: true }
+    safety: read-only
+
+  - id: hostname
+    match:
+      type: exact
+      patterns: ["hostname", "hostname -s", "hostname -f", "hostname -I"]
+    action: { type: shell, command: "hostname" }
+    safety: read-only
+
+  - id: uname
+    match:
+      type: exact
+      patterns: ["uname", "uname -a", "uname -s", "uname -r", "uname -m", "uname -p", "uname -n", "uname -o", "uname -v"]
+    action: { type: shell, command: "uname -a" }
+    safety: read-only
+
+  - id: uptime
+    match:
+      type: exact
+      patterns: ["uptime", "uptime -p", "uptime -s"]
+    action: { type: shell, command: "uptime" }
+    safety: read-only
+
+  - id: date
+    match:
+      type: exact
+      patterns: ["date", "date -u", "date +%s", "date +%F", "date +%Y", "date --iso-8601", "date --iso-8601=seconds"]
+    action: { type: shell, command: "date" }
+    safety: read-only
+
+  - id: cal
+    match:
+      type: exact
+      patterns: ["cal", "cal -3", "cal -y"]
+    action: { type: shell, command: "cal" }
+    safety: read-only
+
+  - id: echo
+    match:
+      type: prefix
+      patterns: ["echo"]
+    action: { type: shell, command: "echo", args_passthrough: true }
+    safety: read-only
+
+  - id: printf
+    match:
+      type: prefix
+      patterns: ["printf"]
+    action: { type: shell, command: "printf", args_passthrough: true }
+    safety: read-only
+
+  - id: true-cmd
+    match:
+      type: exact
+      patterns: ["true"]
+    action: { type: shell, command: "true" }
+    safety: read-only
+
+  - id: false-cmd
+    match:
+      type: exact
+      patterns: ["false"]
+    action: { type: shell, command: "false" }
+    safety: read-only
+
+  - id: which
+    match:
+      type: prefix
+      patterns: ["which", "type", "command -v", "whereis"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: which-passthrough
+    match:
+      type: regex
+      patterns:
+        - "^(which|whereis|type|command -v)\\s+(\\S.*)$"
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: mkdir
+    match:
+      type: prefix
+      patterns: ["mkdir -p", "mkdir"]
+    action: { type: shell, command: "mkdir", args_passthrough: true }
+    safety: write-confined
+
+  - id: rmdir
+    match:
+      type: prefix
+      patterns: ["rmdir"]
+    action: { type: shell, command: "rmdir", args_passthrough: true }
+    safety: write-confined
+
+  - id: touch
+    match:
+      type: prefix
+      patterns: ["touch"]
+    action: { type: shell, command: "touch", args_passthrough: true }
+    safety: write-confined
+
+  - id: cp
+    match:
+      type: prefix
+      patterns: ["cp -r", "cp -R", "cp -a", "cp -i", "cp"]
+    action: { type: shell, command: "cp", args_passthrough: true }
+    safety: write-confined
+
+  - id: mv
+    match:
+      type: prefix
+      patterns: ["mv -i", "mv -n", "mv"]
+    action: { type: shell, command: "mv", args_passthrough: true }
+    safety: write-confined
+
+  - id: ln
+    match:
+      type: prefix
+      patterns: ["ln -s", "ln -sf"]
+    action: { type: shell, command: "ln", args_passthrough: true }
+    safety: write-confined
+
+  - id: readlink
+    match:
+      type: prefix
+      patterns: ["readlink -f", "readlink"]
+    action: { type: shell, command: "readlink", args_passthrough: true }
+    safety: read-only
+
+  - id: realpath
+    match:
+      type: prefix
+      patterns: ["realpath"]
+    action: { type: shell, command: "realpath", args_passthrough: true }
+    safety: read-only
+
+  - id: basename
+    match:
+      type: prefix
+      patterns: ["basename"]
+    action: { type: shell, command: "basename", args_passthrough: true }
+    safety: read-only
+
+  - id: dirname
+    match:
+      type: prefix
+      patterns: ["dirname"]
+    action: { type: shell, command: "dirname", args_passthrough: true }
+    safety: read-only
+
+  - id: stat
+    match:
+      type: prefix
+      patterns: ["stat"]
+    action: { type: shell, command: "stat", args_passthrough: true }
+    safety: read-only
+
+  - id: file
+    match:
+      type: prefix
+      patterns: ["file"]
+    action: { type: shell, command: "file", args_passthrough: true }
+    safety: read-only
+
+  - id: env
+    match:
+      type: exact
+      patterns: ["env", "printenv"]
+    action: { type: shell, command: "env" }
+    safety: read-only
+
+  - id: printenv-var
+    match:
+      type: prefix
+      patterns: ["printenv"]
+    action: { type: shell, command: "printenv", args_passthrough: true }
+    safety: read-only
+
+  - id: history
+    match:
+      type: exact
+      patterns: ["history", "history 20", "history 50"]
+    action: { type: shell, command: "history" }
+    safety: read-only
+
+  - id: alias-list
+    match:
+      type: exact
+      patterns: ["alias", "alias -p"]
+    action: { type: shell, command: "alias" }
+    safety: read-only
+
+  - id: clear
+    match:
+      type: exact
+      patterns: ["clear", "cls"]
+    action: { type: shell, command: "clear" }
+    safety: read-only
+
+  - id: sleep
+    match:
+      type: regex
+      patterns: ["^sleep\\s+([0-9.]+)$"]
+    action: { type: shell, command: "sleep {{arg1}}" }
+    safety: read-only
+
+  - id: who-w
+    match:
+      type: exact
+      patterns: ["who", "w", "who am i", "last", "last -n 10", "tty"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: who-passthrough
+    match:
+      type: regex
+      patterns: ["^(who|w|last|tty)(?:\\s+.*)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: cd-not-supported
+    match:
+      type: prefix
+      patterns: ["cd"]
+    action:
+      type: passthrough
+      reason: "cd only affects the parent shell; use ninja from your shell directly"
+    safety: read-only
