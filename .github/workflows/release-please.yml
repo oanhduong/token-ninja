@@ -3,11 +3,16 @@ name: release-please
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish current package.json version to npm (bypasses release-please)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   release-please:
@@ -15,38 +20,48 @@ jobs:
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
+        if: github.event_name == 'push'
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      - name: Decide whether to publish
+        id: gate
+        run: |
+          if [[ "${{ steps.release.outputs.release_created }}" == "true" ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.publish }}" == "true" ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.gate.outputs.publish == 'true'
 
       - uses: actions/setup-node@v4
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.gate.outputs.publish == 'true'
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
           cache: npm
 
       - run: npm ci --no-audit --no-fund
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.gate.outputs.publish == 'true'
 
       - run: npm run lint
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.gate.outputs.publish == 'true'
 
       - run: npm run typecheck
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.gate.outputs.publish == 'true'
 
       - run: npm test
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.gate.outputs.publish == 'true'
         env:
           CI: "true"
 
       - run: npm run build
-        if: ${{ steps.release.outputs.release_created }}
+        if: steps.gate.outputs.publish == 'true'
 
-      - run: npm publish --provenance --access public
-        if: ${{ steps.release.outputs.release_created }}
+      - run: npm publish --access public
+        if: steps.gate.outputs.publish == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
