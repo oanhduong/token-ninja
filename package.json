@@ -1,0 +1,67 @@
+{
+  "name": "token-ninja",
+  "version": "0.1.0",
+  "description": "Save tokens on commands that don't need AI. Intercepts commands meant for AI coding assistants and runs simple/deterministic ones locally with zero LLM calls.",
+  "keywords": [
+    "ai",
+    "cli",
+    "claude",
+    "codex",
+    "cursor",
+    "aider",
+    "gemini",
+    "mcp",
+    "tokens",
+    "router",
+    "shim"
+  ],
+  "license": "MIT",
+  "author": "token-ninja contributors",
+  "homepage": "https://github.com/token-ninja/token-ninja#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/token-ninja/token-ninja.git"
+  },
+  "bugs": {
+    "url": "https://github.com/token-ninja/token-ninja/issues"
+  },
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "ninja": "dist/cli.js",
+    "token-ninja": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-rules.mjs",
+    "dev": "tsc -w -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "commander": "^12.1.0",
+    "execa": "^9.5.1",
+    "yaml": "^2.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "@vitest/coverage-v8": "^2.1.5",
+    "eslint": "^9.15.0",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.5"
+  }
+}
