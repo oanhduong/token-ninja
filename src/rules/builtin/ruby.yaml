@@ -1,0 +1,106 @@
+domain: ruby
+rules:
+  - id: ruby-version
+    match:
+      type: exact
+      patterns: ["ruby -v", "ruby --version"]
+    action: { type: shell, command: "ruby -v" }
+    safety: read-only
+
+  - id: ruby-eval
+    match:
+      type: regex
+      patterns: ["^ruby\\s+-e\\s+(.+)$"]
+    action: { type: shell, command: "ruby -e {{arg1}}" }
+    safety: read-only
+
+  - id: gem
+    match:
+      type: exact
+      patterns: ["gem list", "gem env", "gem environment"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: gem-list-passthrough
+    match:
+      type: prefix
+      patterns: ["gem list", "gem env"]
+    action: { type: shell, command: "gem", args_passthrough: true }
+    safety: read-only
+
+  - id: gem-install
+    match:
+      type: prefix
+      patterns: ["gem install"]
+    action: { type: shell, command: "gem install", args_passthrough: true }
+    safety: write-network
+
+  - id: bundle
+    match:
+      type: exact
+      patterns:
+        - "bundle install"
+        - "bundle update"
+        - "bundle list"
+        - "bundle info"
+        - "bundle check"
+        - "bundle outdated"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: bundle-passthrough
+    match:
+      type: prefix
+      patterns: ["bundle install", "bundle update", "bundle list", "bundle info", "bundle exec", "bundle check", "bundle outdated"]
+    action: { type: shell, command: "bundle", args_passthrough: true }
+    safety: write-network
+
+  - id: rake
+    match:
+      type: exact
+      patterns: ["rake", "rake -T", "rake -P"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: rake-passthrough
+    match:
+      type: prefix
+      patterns: ["rake"]
+    action: { type: shell, command: "rake", args_passthrough: true }
+    safety: write-confined
+
+  - id: rails
+    match:
+      type: exact
+      patterns:
+        - "rails -v"
+        - "rails --version"
+        - "rails routes"
+        - "rails db:migrate"
+        - "rails db:rollback"
+        - "rails db:seed"
+        - "rails test"
+        - "rails --help"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: rails-passthrough
+    match:
+      type: prefix
+      patterns: ["rails routes", "rails db:", "rails test", "rails generate", "rails g", "rails new"]
+    action: { type: shell, command: "rails", args_passthrough: true }
+    safety: write-confined
+
+  - id: rspec
+    match:
+      type: exact
+      patterns: ["rspec", "rspec -f d", "rspec --format documentation", "rspec --dry-run"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: rspec-passthrough
+    match:
+      type: prefix
+      patterns: ["rspec"]
+    action: { type: shell, command: "rspec", args_passthrough: true }
+    safety: write-confined

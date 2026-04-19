@@ -1,0 +1,102 @@
+domain: rust
+rules:
+  - id: cargo-common
+    match:
+      type: exact
+      patterns:
+        - "cargo build"
+        - "cargo build --release"
+        - "cargo build --workspace"
+        - "cargo build --all-targets"
+        - "cargo run"
+        - "cargo run --release"
+        - "cargo test"
+        - "cargo test --release"
+        - "cargo test --workspace"
+        - "cargo check"
+        - "cargo check --all-targets"
+        - "cargo clippy"
+        - "cargo clippy --all-targets"
+        - "cargo clippy --fix"
+        - "cargo fmt"
+        - "cargo fmt --check"
+        - "cargo fmt --all"
+        - "cargo doc"
+        - "cargo doc --no-deps"
+        - "cargo doc --open"
+        - "cargo update"
+        - "cargo tree"
+        - "cargo audit"
+        - "cargo bench"
+        - "cargo clean"
+        - "cargo --version"
+        - "cargo -V"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: cargo-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "cargo build"
+        - "cargo run"
+        - "cargo test"
+        - "cargo check"
+        - "cargo clippy"
+        - "cargo fmt"
+        - "cargo doc"
+        - "cargo bench"
+        - "cargo tree"
+        - "cargo audit"
+    action: { type: shell, command: "cargo", args_passthrough: true }
+    safety: write-network
+
+  - id: cargo-new
+    match:
+      type: regex
+      patterns:
+        - "^cargo\\s+(new|init)\\s+(.+)$"
+    action: { type: shell, command: "cargo {{arg1}} {{arg2}}" }
+    safety: write-confined
+
+  - id: cargo-add-remove
+    match:
+      type: prefix
+      patterns: ["cargo add", "cargo remove", "cargo rm"]
+    action: { type: shell, command: "cargo", args_passthrough: true }
+    safety: write-network
+
+  - id: cargo-install
+    match:
+      type: prefix
+      patterns: ["cargo install"]
+    action: { type: shell, command: "cargo install", args_passthrough: true }
+    safety: write-network
+
+  - id: rustc-version
+    match:
+      type: exact
+      patterns: ["rustc --version", "rustc -V", "rustc -Vv"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: rustc-version-passthrough
+    match:
+      type: regex
+      patterns: ["^rustc\\s+(-V|-Vv|--version)$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: rustup
+    match:
+      type: exact
+      patterns: ["rustup show", "rustup update", "rustup toolchain list", "rustup component list", "rustup which cargo"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: rustup-passthrough
+    match:
+      type: prefix
+      patterns: ["rustup show", "rustup toolchain list", "rustup component list", "rustup which"]
+    action: { type: shell, command: "rustup", args_passthrough: true }
+    safety: read-only

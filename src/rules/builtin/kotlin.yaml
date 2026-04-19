@@ -1,0 +1,29 @@
+domain: kotlin
+rules:
+  - id: kotlin-version
+    match:
+      type: exact
+      patterns: ["kotlin -version", "kotlinc -version", "kotlinc-native -version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: kotlin-version-passthrough
+    match:
+      type: regex
+      patterns: ["^(kotlin|kotlinc|kotlinc-native)\\s+-version$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: kotlinc
+    match:
+      type: prefix
+      patterns: ["kotlinc"]
+    action: { type: shell, command: "kotlinc", args_passthrough: true }
+    safety: write-confined
+
+  - id: gradle-app-tasks
+    match:
+      type: prefix
+      patterns: [":app:build", ":app:test", ":app:assemble", "gradle :app:"]
+    action: { type: shell, command: "gradle", args_passthrough: true }
+    safety: write-network

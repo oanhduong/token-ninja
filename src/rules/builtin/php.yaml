@@ -1,0 +1,76 @@
+domain: php
+rules:
+  - id: php-version
+    match:
+      type: exact
+      patterns: ["php -v", "php --version", "php -i", "php -m"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: php-version-passthrough
+    match:
+      type: regex
+      patterns: ["^php\\s+(-v|-V|--version|-i|-m)$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: php-r
+    match:
+      type: regex
+      patterns: ["^php\\s+-r\\s+(.+)$"]
+    action: { type: shell, command: "php -r {{arg1}}" }
+    safety: read-only
+
+  - id: php-server
+    match:
+      type: regex
+      patterns: ["^php\\s+-S\\s+(\\S+)(?:\\s+(\\S+))?$"]
+    action: { type: shell, command: "php -S {{arg1}} {{arg2}}" }
+    safety: write-network
+
+  - id: composer
+    match:
+      type: exact
+      patterns:
+        - "composer install"
+        - "composer update"
+        - "composer dump-autoload"
+        - "composer show"
+        - "composer outdated"
+        - "composer validate"
+        - "composer status"
+        - "composer --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: composer-passthrough
+    match:
+      type: prefix
+      patterns: ["composer install", "composer update", "composer require", "composer remove", "composer show", "composer outdated", "composer dump-autoload", "composer validate"]
+    action: { type: shell, command: "composer", args_passthrough: true }
+    safety: write-network
+
+  - id: artisan
+    match:
+      type: exact
+      patterns:
+        - "php artisan"
+        - "php artisan list"
+        - "php artisan migrate"
+        - "php artisan migrate:status"
+        - "php artisan migrate:fresh"
+        - "php artisan route:list"
+        - "php artisan cache:clear"
+        - "php artisan config:clear"
+        - "php artisan view:clear"
+        - "php artisan queue:work"
+        - "php artisan --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: artisan-passthrough
+    match:
+      type: prefix
+      patterns: ["php artisan"]
+    action: { type: shell, command: "php artisan", args_passthrough: true }
+    safety: write-confined

@@ -1,0 +1,273 @@
+domain: python
+rules:
+  - id: python-version
+    match:
+      type: exact
+      patterns: ["python -V", "python --version", "python3 -V", "python3 --version", "python2 -V"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: python-version-passthrough
+    match:
+      type: regex
+      patterns: ["^python3?\\s+(-V|--version)$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: python-m
+    match:
+      type: prefix
+      patterns: ["python -m", "python3 -m"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: python-m-passthrough
+    match:
+      type: regex
+      patterns: ["^(python3?\\s+-m)\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: write-network
+
+  - id: python-c
+    match:
+      type: regex
+      patterns: ["^(python3?\\s+-c)\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: pip-install
+    match:
+      type: prefix
+      patterns:
+        - "pip install -r"
+        - "pip install --upgrade -r"
+        - "pip install -e"
+        - "pip install --editable"
+        - "pip install --upgrade"
+        - "pip install -U"
+        - "pip install --user"
+        - "pip install"
+        - "pip3 install"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: pip-install-passthrough
+    match:
+      type: prefix
+      patterns: ["pip install", "pip3 install"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  - id: pip-uninstall
+    match:
+      type: prefix
+      patterns: ["pip uninstall", "pip3 uninstall"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: pip-uninstall-passthrough
+    match:
+      type: regex
+      patterns: ["^(pip3?)\\s+uninstall\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} uninstall {{arg2}}" }
+    safety: write-confined
+
+  - id: pip-list
+    match:
+      type: exact
+      patterns:
+        - "pip list"
+        - "pip list --outdated"
+        - "pip3 list"
+        - "pip freeze"
+        - "pip3 freeze"
+        - "pip check"
+        - "pip3 check"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: pip-list-passthrough
+    match:
+      type: prefix
+      patterns: ["pip list", "pip3 list", "pip freeze", "pip3 freeze", "pip show", "pip3 show", "pip check", "pip3 check"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: pytest
+    match:
+      type: exact
+      patterns: ["pytest", "pytest -v", "pytest -vv", "pytest -q", "pytest --cov", "pytest -x", "pytest -s", "pytest --lf", "pytest --ff"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: pytest-passthrough
+    match:
+      type: prefix
+      patterns: ["pytest -k", "pytest -m", "pytest --cov", "pytest -v", "pytest"]
+    action: { type: shell, command: "pytest", args_passthrough: true }
+    safety: write-confined
+
+  - id: python-m-pytest
+    match:
+      type: prefix
+      patterns: ["python -m pytest", "python3 -m pytest"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-confined
+
+  - id: python-m-unittest
+    match:
+      type: prefix
+      patterns: ["python -m unittest", "python3 -m unittest"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-confined
+
+  # Poetry
+  - id: poetry-install
+    match:
+      type: exact
+      patterns: ["poetry install", "poetry install --no-root", "poetry install --no-dev", "poetry install --sync"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: poetry-install-passthrough
+    match:
+      type: prefix
+      patterns: ["poetry install"]
+    action: { type: shell, command: "poetry install", args_passthrough: true }
+    safety: write-network
+
+  - id: poetry-add
+    match:
+      type: prefix
+      patterns: ["poetry add -D", "poetry add --dev", "poetry add"]
+    action: { type: shell, command: "poetry add", args_passthrough: true }
+    safety: write-network
+
+  - id: poetry-remove
+    match:
+      type: prefix
+      patterns: ["poetry remove"]
+    action: { type: shell, command: "poetry remove", args_passthrough: true }
+    safety: write-confined
+
+  - id: poetry-update
+    match:
+      type: exact
+      patterns: ["poetry update", "poetry lock", "poetry lock --no-update", "poetry show", "poetry show --tree", "poetry show --outdated"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: poetry-other-passthrough
+    match:
+      type: prefix
+      patterns: ["poetry run", "poetry shell", "poetry show", "poetry version", "poetry env info"]
+    action: { type: shell, command: "poetry", args_passthrough: true }
+    safety: write-confined
+
+  # uv
+  - id: uv-sync
+    match:
+      type: exact
+      patterns: ["uv sync", "uv lock", "uv lock --upgrade"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: uv-add
+    match:
+      type: prefix
+      patterns: ["uv add --dev", "uv add -d", "uv add"]
+    action: { type: shell, command: "uv add", args_passthrough: true }
+    safety: write-network
+
+  - id: uv-remove
+    match:
+      type: prefix
+      patterns: ["uv remove"]
+    action: { type: shell, command: "uv remove", args_passthrough: true }
+    safety: write-confined
+
+  - id: uv-run
+    match:
+      type: prefix
+      patterns: ["uv run"]
+    action: { type: shell, command: "uv run", args_passthrough: true }
+    safety: write-confined
+
+  - id: uv-pip
+    match:
+      type: prefix
+      patterns: ["uv pip install", "uv pip list", "uv pip show", "uv pip freeze"]
+    action: { type: shell, command: "uv pip", args_passthrough: true }
+    safety: write-network
+
+  # Conda
+  - id: conda-info
+    match:
+      type: exact
+      patterns: ["conda list", "conda info", "conda env list", "conda info --envs"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: conda-info-passthrough
+    match:
+      type: prefix
+      patterns: ["conda list", "conda info", "conda env list"]
+    action: { type: shell, command: "conda", args_passthrough: true }
+    safety: read-only
+
+  # Formatters / linters
+  - id: ruff
+    match:
+      type: exact
+      patterns: ["ruff check", "ruff check .", "ruff format", "ruff format .", "ruff check --fix", "ruff check --fix ."]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: ruff-passthrough
+    match:
+      type: prefix
+      patterns: ["ruff check", "ruff format"]
+    action: { type: shell, command: "ruff", args_passthrough: true }
+    safety: write-confined
+
+  - id: black
+    match:
+      type: exact
+      patterns: ["black", "black .", "black --check", "black --check .", "black --diff", "black --diff ."]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: black-passthrough
+    match:
+      type: prefix
+      patterns: ["black"]
+    action: { type: shell, command: "black", args_passthrough: true }
+    safety: write-confined
+
+  - id: mypy
+    match:
+      type: prefix
+      patterns: ["mypy"]
+    action: { type: shell, command: "mypy", args_passthrough: true }
+    safety: read-only
+
+  - id: pylint
+    match:
+      type: prefix
+      patterns: ["pylint"]
+    action: { type: shell, command: "pylint", args_passthrough: true }
+    safety: read-only
+
+  - id: isort
+    match:
+      type: prefix
+      patterns: ["isort"]
+    action: { type: shell, command: "isort", args_passthrough: true }
+    safety: write-confined
+
+  - id: flake8
+    match:
+      type: prefix
+      patterns: ["flake8"]
+    action: { type: shell, command: "flake8", args_passthrough: true }
+    safety: read-only

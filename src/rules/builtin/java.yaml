@@ -1,0 +1,102 @@
+domain: java
+rules:
+  - id: java-version
+    match:
+      type: exact
+      patterns: ["java -version", "java --version", "javac -version", "javac --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: java-version-passthrough
+    match:
+      type: regex
+      patterns: ["^(java|javac)\\s+(-version|--version)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: java-jar
+    match:
+      type: prefix
+      patterns: ["java -jar"]
+    action: { type: shell, command: "java -jar", args_passthrough: true }
+    safety: write-confined
+
+  - id: mvn-common
+    match:
+      type: exact
+      patterns:
+        - "mvn compile"
+        - "mvn test"
+        - "mvn package"
+        - "mvn install"
+        - "mvn clean"
+        - "mvn clean install"
+        - "mvn clean package"
+        - "mvn clean test"
+        - "mvn verify"
+        - "mvn validate"
+        - "mvn dependency:tree"
+        - "mvn dependency:list"
+        - "mvn dependency:resolve"
+        - "mvn versions:display-dependency-updates"
+        - "mvn versions:display-plugin-updates"
+        - "mvn help:system"
+        - "mvn -v"
+        - "mvn --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: mvn-passthrough
+    match:
+      type: prefix
+      patterns: ["mvn"]
+    action: { type: shell, command: "mvn", args_passthrough: true }
+    safety: write-network
+
+  - id: gradle-common
+    match:
+      type: exact
+      patterns:
+        - "gradle build"
+        - "gradle clean"
+        - "gradle clean build"
+        - "gradle test"
+        - "gradle check"
+        - "gradle assemble"
+        - "gradle dependencies"
+        - "gradle tasks"
+        - "gradle wrapper"
+        - "gradle --version"
+        - "gradle -v"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: gradle-passthrough
+    match:
+      type: prefix
+      patterns: ["gradle"]
+    action: { type: shell, command: "gradle", args_passthrough: true }
+    safety: write-network
+
+  - id: gradlew-common
+    match:
+      type: exact
+      patterns:
+        - "./gradlew build"
+        - "./gradlew clean"
+        - "./gradlew clean build"
+        - "./gradlew test"
+        - "./gradlew check"
+        - "./gradlew assemble"
+        - "./gradlew dependencies"
+        - "./gradlew tasks"
+        - "./gradlew --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: gradlew-passthrough
+    match:
+      type: prefix
+      patterns: ["./gradlew"]
+    action: { type: shell, command: "./gradlew", args_passthrough: true }
+    safety: write-network

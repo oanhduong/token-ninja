@@ -1,0 +1,93 @@
+domain: go
+rules:
+  - id: go-version
+    match:
+      type: exact
+      patterns: ["go version", "go env"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: go-version-passthrough
+    match:
+      type: regex
+      patterns: ["^go\\s+(version|env)(?:\\s+.*)?$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: go-common
+    match:
+      type: exact
+      patterns:
+        - "go build"
+        - "go build ./..."
+        - "go run ."
+        - "go test"
+        - "go test ./..."
+        - "go test -v"
+        - "go test -v ./..."
+        - "go test -cover"
+        - "go test -race"
+        - "go test -race ./..."
+        - "go vet"
+        - "go vet ./..."
+        - "go fmt"
+        - "go fmt ./..."
+        - "go mod tidy"
+        - "go mod download"
+        - "go mod verify"
+        - "go mod vendor"
+        - "go mod graph"
+        - "go mod why"
+        - "go list"
+        - "go list ./..."
+        - "go list -m"
+        - "go list -m all"
+        - "go doc"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: go-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "go build"
+        - "go run"
+        - "go test"
+        - "go vet"
+        - "go fmt"
+        - "go mod"
+        - "go list"
+        - "go doc"
+        - "go get"
+        - "go install"
+        - "go tool"
+    action: { type: shell, command: "go", args_passthrough: true }
+    safety: write-network
+
+  - id: go-mod-init
+    match:
+      type: regex
+      patterns: ["^go\\s+mod\\s+init\\s+(.+)$"]
+    action: { type: shell, command: "go mod init {{arg1}}" }
+    safety: write-confined
+
+  - id: gofmt
+    match:
+      type: prefix
+      patterns: ["gofmt -l", "gofmt -d", "gofmt -w", "gofmt"]
+    action: { type: shell, command: "gofmt", args_passthrough: true }
+    safety: write-confined
+
+  - id: golangci-lint
+    match:
+      type: exact
+      patterns: ["golangci-lint run", "golangci-lint run ./...", "golangci-lint version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: golangci-lint-passthrough
+    match:
+      type: prefix
+      patterns: ["golangci-lint"]
+    action: { type: shell, command: "golangci-lint", args_passthrough: true }
+    safety: read-only
