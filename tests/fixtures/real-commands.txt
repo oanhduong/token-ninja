@@ -1,0 +1,439 @@
+# Sample of real-world commands that should match a local rule. One per line.
+# Comments (lines starting with #) are ignored by the coverage test.
+
+# ── shell basics ──────────────────────────────────────────────────────
+ls
+ls -la
+ls -lh
+ls src
+pwd
+whoami
+id
+hostname
+uname -a
+uptime
+date
+env
+which node
+mkdir -p dist
+touch .gitkeep
+cp package.json pkg.backup
+mv foo.txt bar.txt
+stat README.md
+file LICENSE
+echo hello
+history
+
+# ── filesystem ────────────────────────────────────────────────────────
+cat README.md
+head -n 20 file.txt
+tail -n 50 log.txt
+tail -f app.log
+wc -l src/*.ts
+sort -u names.txt
+uniq -c
+diff a.txt b.txt
+diff -u a.txt b.txt
+md5sum file.bin
+sha256sum file.bin
+du -sh .
+df -h
+find . -name "*.ts"
+find . -type f -name "*.md"
+tree -L 2
+
+# ── text ──────────────────────────────────────────────────────────────
+grep -r TODO src
+grep -rn "export function" src
+rg -n "TODO" .
+rg --files
+awk '{print $1}' file.txt
+tr -d '\r' < file.txt
+xxd -p binary.dat
+jq '.' package.json
+jq -r '.name' package.json
+
+# ── process ───────────────────────────────────────────────────────────
+ps aux
+ps -ef
+pgrep -f node
+pidof node
+kill -l
+
+# ── network ───────────────────────────────────────────────────────────
+ping -c 3 google.com
+dig example.com
+nslookup example.com
+host example.com
+whois example.com
+ip a
+netstat -tnlp
+ss -tulpn
+curl -I https://example.com
+curl -s https://api.example.com/status
+
+# ── git read-only ─────────────────────────────────────────────────────
+git status
+git status -s
+git st
+git diff
+git diff --staged
+git diff --name-only
+git log
+git log --oneline
+git log --oneline --graph
+git log --oneline -n 10
+git show HEAD
+git branch
+git branch -a
+git branch -vv
+git branch --show-current
+git remote -v
+git remote show origin
+git config --list
+git stash list
+git ls-files
+git blame src/router/index.ts
+git reflog
+git shortlog -sn
+git describe --tags
+git tag -l
+git rev-parse HEAD
+git rev-parse --abbrev-ref HEAD
+git merge-base main HEAD
+git whatchanged -n 5
+git worktree list
+git submodule status
+git fsck
+git count-objects -vH
+
+# ── git write ─────────────────────────────────────────────────────────
+git add .
+git add -A
+git add -p
+git add src/router/index.ts
+git commit -m "fix: a thing"
+git commit -am "chore: bump"
+git commit --amend --no-edit
+git checkout main
+git checkout -b feature/x
+git switch main
+git switch -c feature/y
+git restore --staged README.md
+git merge feature/x
+git merge --ff-only main
+git pull
+git pull --rebase
+git push
+git push origin main
+git push -u origin feature/x
+git push --force-with-lease
+git push --tags
+git fetch
+git fetch --all --prune
+git clone https://github.com/user/repo
+git tag v1.0.0
+git stash
+git stash pop
+git stash apply
+git rebase main
+git rebase --continue
+git cherry-pick abc1234
+git revert abc1234
+git mv old.txt new.txt
+git rm file.txt
+git init
+
+# ── gh ────────────────────────────────────────────────────────────────
+gh auth status
+gh repo view
+gh pr list
+gh pr view 42
+gh pr checkout 42
+gh issue list
+gh issue view 100
+gh run list
+gh workflow list
+gh release list
+
+# ── npm / yarn / pnpm / bun ───────────────────────────────────────────
+npm install
+npm i
+npm ci
+npm install -D vitest
+npm uninstall lodash
+npm test
+npm start
+npm run build
+npm run dev
+npm run lint
+npm list
+npm ls
+npm outdated
+npm audit
+npm view express
+npm init -y
+npm --version
+npm whoami
+npx vitest
+yarn install
+yarn add lodash
+yarn add -D vitest
+yarn remove lodash
+yarn test
+yarn build
+yarn dev
+yarn list
+yarn outdated
+yarn audit
+yarn why lodash
+yarn workspaces list
+pnpm install
+pnpm i
+pnpm add zod
+pnpm add -D vitest
+pnpm remove lodash
+pnpm test
+pnpm build
+pnpm dev
+pnpm list
+pnpm outdated
+pnpm audit
+pnpm store prune
+pnpm why lodash
+bun install
+bun add zod
+bun remove lodash
+bun test
+bun build
+bun pm ls
+
+# ── python ────────────────────────────────────────────────────────────
+python -V
+python3 --version
+python -m http.server 8080
+python -c "print(1)"
+pip install requests
+pip install -r requirements.txt
+pip install -e .
+pip uninstall requests
+pip list
+pip freeze
+pip check
+pytest
+pytest -v
+pytest -k test_foo
+pytest --cov
+python -m pytest
+python -m unittest
+poetry install
+poetry add requests
+poetry remove requests
+poetry update
+poetry show
+poetry run pytest
+uv sync
+uv add requests
+uv run pytest
+uv pip list
+conda list
+conda env list
+ruff check
+ruff format .
+black .
+black --check
+mypy src
+pylint src
+isort src
+flake8 src
+
+# ── java / kotlin ─────────────────────────────────────────────────────
+java -version
+javac -version
+mvn compile
+mvn test
+mvn package
+mvn clean install
+mvn dependency:tree
+gradle build
+gradle test
+gradle clean
+gradle dependencies
+./gradlew build
+./gradlew test
+kotlinc -version
+
+# ── rust / go / ruby / php ────────────────────────────────────────────
+cargo build
+cargo build --release
+cargo run
+cargo test
+cargo check
+cargo clippy
+cargo fmt
+cargo fmt --check
+cargo doc
+cargo tree
+cargo update
+rustc --version
+rustup show
+go build
+go run .
+go test ./...
+go test -v
+go mod tidy
+go mod download
+go vet ./...
+go fmt ./...
+go version
+go env
+golangci-lint run
+ruby -v
+gem list
+bundle install
+bundle exec rspec
+rake -T
+rails routes
+rails db:migrate
+rspec
+php -v
+composer install
+composer update
+composer show
+php artisan migrate
+php artisan route:list
+
+# ── docker / k8s ──────────────────────────────────────────────────────
+docker ps
+docker ps -a
+docker images
+docker logs container
+docker logs -f container
+docker inspect container
+docker stats --no-stream
+docker build -t myimage .
+docker pull alpine
+docker tag a b
+docker rm container
+docker rmi image
+docker run -it alpine
+docker stop container
+docker restart container
+docker system df
+docker info
+docker volume ls
+docker network ls
+docker compose up -d
+docker compose down
+docker compose ps
+docker compose logs
+kubectl get pods
+kubectl get svc
+kubectl get deployments
+kubectl get nodes
+kubectl get ns
+kubectl describe pod mypod
+kubectl logs mypod
+kubectl logs -f mypod
+kubectl apply -f deploy.yaml
+kubectl port-forward pod/mypod 8080:80
+kubectl config get-contexts
+kubectl config current-context
+kubectl top pods
+kubectl top nodes
+kubectl version
+kubectl cluster-info
+helm list
+helm version
+helm repo list
+
+# ── database read ─────────────────────────────────────────────────────
+psql --version
+mysql --version
+redis-cli ping
+redis-cli info
+redis-cli get key1
+mongosh --version
+sqlite3 app.db ".tables"
+sqlite3 app.db ".schema"
+
+# ── build / test / lint ───────────────────────────────────────────────
+make
+make test
+make clean
+cmake .
+cmake --build build
+ninja
+bazel build //...
+bazel test //...
+sbt compile
+sbt test
+lein deps
+jest
+vitest
+vitest run
+mocha tests
+cypress run
+playwright test
+eslint .
+eslint --fix .
+prettier --check .
+prettier --write .
+rubocop
+shellcheck script.sh
+hadolint Dockerfile
+yamllint config.yaml
+markdownlint README.md
+
+# ── editors / system / archive ────────────────────────────────────────
+code .
+code src/cli.ts
+lscpu
+lsmem
+lsblk
+free -h
+vmstat
+systemctl --user status
+journalctl --user -n 50
+tar -tf archive.tar.gz
+tar -xzf archive.tar.gz
+tar -czf out.tar.gz dir
+zip -r out.zip dir
+unzip archive.zip
+unzip -l archive.zip
+gzip file.txt
+gunzip file.txt.gz
+7z l archive.7z
+7z x archive.7z
+
+# ── natural language ──────────────────────────────────────────────────
+run the tests
+run tests
+test it
+build the project
+build it
+compile it
+install dependencies
+install deps
+list dependencies
+show dependencies
+list files
+show me the files
+what's in this directory
+what changed
+show diff
+show the diff
+what branch am I on
+current branch
+show recent commits
+who wrote this file src/cli.ts
+search for TODO
+find files named index.ts
+what's running
+disk usage
+start the server
+run dev
+show running containers
+list images
+show pods
+list services
