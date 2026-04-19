@@ -12,6 +12,7 @@ unchanged, uninterrupted.
 
 [![CI](https://github.com/oanhduong/token-ninja/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/oanhduong/token-ninja/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/token-ninja.svg?color=cb3837&logo=npm)](https://www.npmjs.com/package/token-ninja)
+[![downloads](https://img.shields.io/npm/dw/token-ninja.svg?color=cb3837&logo=npm&label=downloads)](https://www.npmjs.com/package/token-ninja)
 [![node](https://img.shields.io/node/v/token-ninja.svg?color=339933&logo=nodedotjs)](https://nodejs.org)
 [![license](https://img.shields.io/github/license/oanhduong/token-ninja?color=blue)](LICENSE)
 [![stars](https://img.shields.io/github/stars/oanhduong/token-ninja?style=flat&logo=github)](https://github.com/oanhduong/token-ninja/stargazers)
