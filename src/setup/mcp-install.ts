@@ -15,7 +15,7 @@ export const TOKEN_NINJA_KEY = "token-ninja";
 
 export interface McpClientTarget {
   /** Stable id used in logs and dry-run output. */
-  id: "claude-code" | "cursor" | "claude-desktop";
+  id: "claude-code" | "cursor" | "claude-desktop" | "gemini-cli";
   /** Human-readable label. */
   label: string;
   /** Path to the config file we'd write. */
@@ -64,6 +64,14 @@ export function mcpTargets(
     id: "cursor",
     label: "Cursor",
     path: join(home, ".cursor", "mcp.json"),
+    serversKey: "mcpServers",
+  });
+
+  // Gemini CLI — per-user settings file with the same mcpServers schema.
+  out.push({
+    id: "gemini-cli",
+    label: "Gemini CLI",
+    path: env.GEMINI_CONFIG_PATH ?? join(home, ".gemini", "settings.json"),
     serversKey: "mcpServers",
   });
 
