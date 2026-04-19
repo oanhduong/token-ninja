@@ -1,3 +1,4 @@
+import { realpathSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { execShell } from "../src/router/executor.js";
 
@@ -21,8 +22,11 @@ describe("execShell", () => {
   });
 
   it("respects cwd", async () => {
+    // On macOS `/tmp` is a symlink to `/private/tmp`, so `pwd` reports the
+    // physical path. Compare against the resolved path to stay portable.
+    const expected = realpathSync("/tmp");
     const r = await execShell("pwd", { cwd: "/tmp", captureOnly: true });
-    expect(r.stdout.trim()).toBe("/tmp");
+    expect(r.stdout.trim()).toBe(expected);
   });
 
   it("passes env vars", async () => {

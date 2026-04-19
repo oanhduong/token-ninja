@@ -1,4 +1,6 @@
 import { execa } from "execa";
+import { stat } from "node:fs/promises";
+import { delimiter, join } from "node:path";
 import { claudeAdapter } from "./claude-code.js";
 import { codexAdapter } from "./codex.js";
 import { cursorAdapter } from "./cursor.js";
@@ -27,14 +29,31 @@ export const ADAPTERS: AiAdapter[] = [
 ];
 
 async function onPath(bin: string): Promise<boolean> {
-  const cmd = process.platform === "win32" ? "where" : "command";
-  const args = process.platform === "win32" ? [bin] : ["-v", bin];
-  try {
-    const r = await execa(cmd, args, { reject: false, shell: process.platform !== "win32" });
-    return r.exitCode === 0 && !!r.stdout.trim();
-  } catch {
-    return false;
+  // Walk PATH directly instead of shelling out to `command -v` / `where`.
+  // `command -v` in sh/bash reports shell builtins (e.g. `continue`) as
+  // found, which would falsely match our Continue.dev adapter on every
+  // system that has bash. A filesystem check avoids that collision and is
+  // also cheaper than spawning a subshell.
+  const pathEnv = process.env.PATH ?? "";
+  if (!pathEnv) return false;
+  const exts = process.platform === "win32"
+    ? (process.env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";").map((e) => e.toLowerCase())
+    : [""];
+  for (const dir of pathEnv.split(delimiter)) {
+    if (!dir) continue;
+    for (const ext of exts) {
+      try {
+        const full = join(dir, bin + ext);
+        const st = await stat(full);
+        if (!st.isFile()) continue;
+        if (process.platform === "win32") return true;
+        if (st.mode & 0o111) return true;
+      } catch {
+        /* not found, keep looking */
+      }
+    }
   }
+  return false;
 }
 
 /**
