@@ -1,0 +1,180 @@
+domain: docker
+rules:
+  - id: docker-ps
+    match:
+      type: exact
+      patterns: ["docker ps", "docker ps -a", "docker ps --all", "docker ps -q", "docker ps --format table", "docker container ls", "docker container ls -a"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: docker-ps-passthrough
+    match:
+      type: prefix
+      patterns: ["docker ps", "docker container ls"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: docker-images
+    match:
+      type: exact
+      patterns: ["docker images", "docker images -a", "docker image ls", "docker image ls -a"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: docker-images-passthrough
+    match:
+      type: prefix
+      patterns: ["docker images", "docker image ls"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: docker-logs
+    match:
+      type: prefix
+      patterns: ["docker logs -f", "docker logs --tail", "docker logs"]
+    action: { type: shell, command: "docker logs", args_passthrough: true }
+    safety: read-only
+
+  - id: docker-inspect
+    match:
+      type: prefix
+      patterns: ["docker inspect"]
+    action: { type: shell, command: "docker inspect", args_passthrough: true }
+    safety: read-only
+
+  - id: docker-stats
+    match:
+      type: exact
+      patterns: ["docker stats --no-stream", "docker stats -a --no-stream"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: docker-stats-passthrough
+    match:
+      type: prefix
+      patterns: ["docker stats --no-stream"]
+    action: { type: shell, command: "docker stats", args_passthrough: true }
+    safety: read-only
+
+  - id: docker-build
+    match:
+      type: prefix
+      patterns: ["docker build -t", "docker build --tag", "docker build -f", "docker build --file", "docker build"]
+    action: { type: shell, command: "docker build", args_passthrough: true }
+    safety: write-network
+
+  - id: docker-pull
+    match:
+      type: prefix
+      patterns: ["docker pull"]
+    action: { type: shell, command: "docker pull", args_passthrough: true }
+    safety: write-network
+
+  - id: docker-push
+    match:
+      type: prefix
+      patterns: ["docker push"]
+    action: { type: shell, command: "docker push", args_passthrough: true }
+    safety: write-network
+
+  - id: docker-tag
+    match:
+      type: prefix
+      patterns: ["docker tag"]
+    action: { type: shell, command: "docker tag", args_passthrough: true }
+    safety: write-confined
+
+  - id: docker-rm
+    match:
+      type: prefix
+      patterns: ["docker rm -f", "docker rm"]
+    action: { type: shell, command: "docker rm", args_passthrough: true }
+    safety: write-confined
+
+  - id: docker-rmi
+    match:
+      type: prefix
+      patterns: ["docker rmi -f", "docker rmi"]
+    action: { type: shell, command: "docker rmi", args_passthrough: true }
+    safety: write-confined
+
+  - id: docker-exec
+    match:
+      type: prefix
+      patterns: ["docker exec -it", "docker exec"]
+    action: { type: shell, command: "docker exec", args_passthrough: true, requires_tty: true }
+    safety: write-confined
+
+  - id: docker-run
+    match:
+      type: prefix
+      patterns: ["docker run -it", "docker run -d", "docker run --rm", "docker run"]
+    action: { type: shell, command: "docker run", args_passthrough: true }
+    safety: write-network
+
+  - id: docker-start-stop
+    match:
+      type: prefix
+      patterns: ["docker stop", "docker start", "docker restart", "docker pause", "docker unpause", "docker kill"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: docker-start-stop-passthrough
+    match:
+      type: regex
+      patterns: ["^docker\\s+(stop|start|restart|pause|unpause|kill)\\s+(.+)$"]
+    action: { type: shell, command: "docker {{arg1}} {{arg2}}" }
+    safety: write-confined
+
+  - id: docker-system
+    match:
+      type: exact
+      patterns: ["docker system df", "docker system info", "docker info", "docker version", "docker --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: docker-system-passthrough
+    match:
+      type: prefix
+      patterns: ["docker system df", "docker system info", "docker info", "docker version"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: docker-volume
+    match:
+      type: prefix
+      patterns: ["docker volume ls", "docker volume inspect"]
+    action: { type: shell, command: "docker volume", args_passthrough: true }
+    safety: read-only
+
+  - id: docker-network
+    match:
+      type: prefix
+      patterns: ["docker network ls", "docker network inspect"]
+    action: { type: shell, command: "docker network", args_passthrough: true }
+    safety: read-only
+
+  - id: docker-compose
+    match:
+      type: prefix
+      patterns:
+        - "docker compose up -d"
+        - "docker compose up"
+        - "docker compose down"
+        - "docker compose ps"
+        - "docker compose logs -f"
+        - "docker compose logs"
+        - "docker compose build"
+        - "docker compose restart"
+        - "docker compose exec"
+        - "docker compose config"
+        - "docker-compose up -d"
+        - "docker-compose up"
+        - "docker-compose down"
+        - "docker-compose ps"
+        - "docker-compose logs"
+        - "docker-compose build"
+        - "docker-compose restart"
+        - "docker-compose exec"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network

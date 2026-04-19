@@ -1,0 +1,138 @@
+domain: kubernetes
+rules:
+  - id: kubectl-get
+    match:
+      type: exact
+      patterns:
+        - "kubectl get pods"
+        - "kubectl get pods -A"
+        - "kubectl get pods --all-namespaces"
+        - "kubectl get pods -o wide"
+        - "kubectl get svc"
+        - "kubectl get services"
+        - "kubectl get svc -A"
+        - "kubectl get deployments"
+        - "kubectl get deploy"
+        - "kubectl get deployments -A"
+        - "kubectl get nodes"
+        - "kubectl get nodes -o wide"
+        - "kubectl get ns"
+        - "kubectl get namespaces"
+        - "kubectl get all"
+        - "kubectl get all -A"
+        - "kubectl get events"
+        - "kubectl get events --sort-by=.metadata.creationTimestamp"
+        - "kubectl get cm"
+        - "kubectl get configmaps"
+        - "kubectl get secrets"
+        - "kubectl get ingress"
+        - "kubectl get ing"
+        - "kubectl get pv"
+        - "kubectl get pvc"
+        - "kubectl get sa"
+        - "kubectl get jobs"
+        - "kubectl get cronjobs"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: kubectl-get-passthrough
+    match:
+      type: prefix
+      patterns: ["kubectl get"]
+    action: { type: shell, command: "kubectl get", args_passthrough: true }
+    safety: write-network
+
+  - id: kubectl-describe
+    match:
+      type: prefix
+      patterns: ["kubectl describe"]
+    action: { type: shell, command: "kubectl describe", args_passthrough: true }
+    safety: write-network
+
+  - id: kubectl-logs
+    match:
+      type: prefix
+      patterns: ["kubectl logs -f", "kubectl logs --tail", "kubectl logs -p", "kubectl logs"]
+    action: { type: shell, command: "kubectl logs", args_passthrough: true }
+    safety: write-network
+
+  - id: kubectl-exec
+    match:
+      type: prefix
+      patterns: ["kubectl exec -it", "kubectl exec"]
+    action: { type: shell, command: "kubectl exec", args_passthrough: true, requires_tty: true }
+    safety: write-network
+
+  - id: kubectl-apply
+    match:
+      type: prefix
+      patterns: ["kubectl apply -f", "kubectl apply -k"]
+    action: { type: shell, command: "kubectl apply", args_passthrough: true }
+    safety: write-network
+
+  - id: kubectl-port-forward
+    match:
+      type: prefix
+      patterns: ["kubectl port-forward"]
+    action: { type: shell, command: "kubectl port-forward", args_passthrough: true }
+    safety: write-network
+
+  - id: kubectl-config
+    match:
+      type: exact
+      patterns:
+        - "kubectl config get-contexts"
+        - "kubectl config current-context"
+        - "kubectl config view"
+        - "kubectl config view --minify"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: kubectl-config-use
+    match:
+      type: regex
+      patterns: ["^kubectl\\s+config\\s+use-context\\s+(\\S+)$"]
+    action: { type: shell, command: "kubectl config use-context {{arg1}}" }
+    safety: write-confined
+
+  - id: kubectl-top
+    match:
+      type: exact
+      patterns: ["kubectl top pods", "kubectl top nodes", "kubectl top pods -A", "kubectl top nodes --sort-by=cpu", "kubectl top pods --sort-by=cpu", "kubectl top pods --sort-by=memory"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: kubectl-top-passthrough
+    match:
+      type: prefix
+      patterns: ["kubectl top"]
+    action: { type: shell, command: "kubectl top", args_passthrough: true }
+    safety: write-network
+
+  - id: kubectl-version
+    match:
+      type: exact
+      patterns: ["kubectl version", "kubectl version --short", "kubectl version --client", "kubectl cluster-info"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: kubectl-version-passthrough
+    match:
+      type: prefix
+      patterns: ["kubectl version", "kubectl cluster-info"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  - id: helm
+    match:
+      type: exact
+      patterns: ["helm list", "helm list -A", "helm list --all-namespaces", "helm version", "helm repo list", "helm repo update", "helm env"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: helm-passthrough
+    match:
+      type: prefix
+      patterns: ["helm list", "helm status", "helm version", "helm repo list", "helm repo update", "helm env", "helm history", "helm get"]
+    action: { type: shell, command: "helm", args_passthrough: true }
+    safety: write-network
