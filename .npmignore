@@ -1,0 +1,14 @@
+src/
+tests/
+scripts/
+.github/
+coverage/
+*.tsbuildinfo
+tsconfig.json
+vitest.config.ts
+.editorconfig
+.gitignore
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+CHANGELOG.md
+SECURITY.md
