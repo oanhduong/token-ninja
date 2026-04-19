@@ -1,0 +1,120 @@
+domain: yarn
+rules:
+  - id: yarn-install
+    match:
+      type: exact
+      patterns:
+        - "yarn"
+        - "yarn install"
+        - "yarn install --frozen-lockfile"
+        - "yarn install --immutable"
+        - "yarn install --production"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: yarn-install-passthrough
+    match:
+      type: prefix
+      patterns: ["yarn install"]
+    action: { type: shell, command: "yarn install", args_passthrough: true }
+    safety: write-network
+
+  - id: yarn-add
+    match:
+      type: prefix
+      patterns: ["yarn add -D", "yarn add --dev", "yarn add -W", "yarn add"]
+    action: { type: shell, command: "yarn add", args_passthrough: true }
+    safety: write-network
+
+  - id: yarn-remove
+    match:
+      type: prefix
+      patterns: ["yarn remove"]
+    action: { type: shell, command: "yarn remove", args_passthrough: true }
+    safety: write-confined
+
+  - id: yarn-run-known
+    match:
+      type: exact
+      patterns:
+        - "yarn test"
+        - "yarn build"
+        - "yarn dev"
+        - "yarn start"
+        - "yarn lint"
+        - "yarn format"
+        - "yarn typecheck"
+        - "yarn serve"
+        - "yarn preview"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: yarn-run-passthrough
+    match:
+      type: prefix
+      patterns: ["yarn run", "yarn"]
+    action: { type: shell, command: "yarn", args_passthrough: true }
+    safety: write-confined
+
+  - id: yarn-list
+    match:
+      type: exact
+      patterns: ["yarn list", "yarn list --depth=0"]
+    action: { type: shell, command: "yarn list" }
+    safety: read-only
+
+  - id: yarn-outdated
+    match:
+      type: exact
+      patterns: ["yarn outdated"]
+    action: { type: shell, command: "yarn outdated" }
+    safety: write-network
+
+  - id: yarn-audit
+    match:
+      type: exact
+      patterns: ["yarn audit", "yarn npm audit"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: yarn-audit-passthrough
+    match:
+      type: prefix
+      patterns: ["yarn audit", "yarn npm audit"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  - id: yarn-cache
+    match:
+      type: prefix
+      patterns: ["yarn cache list", "yarn cache clean"]
+    action: { type: shell, command: "yarn cache", args_passthrough: true }
+    safety: write-confined
+
+  - id: yarn-why
+    match:
+      type: prefix
+      patterns: ["yarn why"]
+    action: { type: shell, command: "yarn why", args_passthrough: true }
+    safety: read-only
+
+  - id: yarn-workspaces
+    match:
+      type: exact
+      patterns: ["yarn workspaces list", "yarn workspaces info"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: yarn-workspaces-passthrough
+    match:
+      type: prefix
+      patterns: ["yarn workspaces"]
+    action: { type: shell, command: "yarn workspaces", args_passthrough: true }
+    safety: read-only
+
+  - id: yarn-version
+    match:
+      type: exact
+      patterns: ["yarn --version", "yarn -v", "yarn version"]
+    action: { type: shell, command: "yarn --version" }
+    safety: read-only

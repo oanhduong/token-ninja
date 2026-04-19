@@ -1,0 +1,66 @@
+domain: bun
+rules:
+  - id: bun-install
+    match:
+      type: exact
+      patterns: ["bun install", "bun i", "bun install --frozen-lockfile", "bun install --production"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: bun-install-passthrough
+    match:
+      type: prefix
+      patterns: ["bun install", "bun i"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  - id: bun-add
+    match:
+      type: prefix
+      patterns: ["bun add -d", "bun add -D", "bun add --dev", "bun add -g", "bun add"]
+    action: { type: shell, command: "bun add", args_passthrough: true }
+    safety: write-network
+
+  - id: bun-remove
+    match:
+      type: prefix
+      patterns: ["bun remove"]
+    action: { type: shell, command: "bun remove", args_passthrough: true }
+    safety: write-confined
+
+  - id: bun-run-known
+    match:
+      type: exact
+      patterns:
+        - "bun test"
+        - "bun build"
+        - "bun dev"
+        - "bun start"
+        - "bun run build"
+        - "bun run dev"
+        - "bun run start"
+        - "bun run test"
+        - "bun run lint"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: bun-run-passthrough
+    match:
+      type: prefix
+      patterns: ["bun run", "bun x", "bun"]
+    action: { type: shell, command: "bun", args_passthrough: true }
+    safety: write-confined
+
+  - id: bun-pm-ls
+    match:
+      type: exact
+      patterns: ["bun pm ls", "bun pm ls -a"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: bun-version
+    match:
+      type: exact
+      patterns: ["bun -v", "bun --version"]
+    action: { type: shell, command: "bun -v" }
+    safety: read-only

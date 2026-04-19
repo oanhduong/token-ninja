@@ -1,0 +1,112 @@
+domain: pnpm
+rules:
+  - id: pnpm-install
+    match:
+      type: exact
+      patterns:
+        - "pnpm install"
+        - "pnpm i"
+        - "pnpm install --frozen-lockfile"
+        - "pnpm install --prod"
+        - "pnpm install --production"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: pnpm-install-passthrough
+    match:
+      type: prefix
+      patterns: ["pnpm install", "pnpm i"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  - id: pnpm-add
+    match:
+      type: prefix
+      patterns: ["pnpm add -D", "pnpm add --save-dev", "pnpm add -w", "pnpm add -g", "pnpm add"]
+    action: { type: shell, command: "pnpm add", args_passthrough: true }
+    safety: write-network
+
+  - id: pnpm-remove
+    match:
+      type: prefix
+      patterns: ["pnpm remove", "pnpm rm"]
+    action: { type: shell, command: "pnpm remove", args_passthrough: true }
+    safety: write-confined
+
+  - id: pnpm-run-known
+    match:
+      type: exact
+      patterns:
+        - "pnpm test"
+        - "pnpm build"
+        - "pnpm dev"
+        - "pnpm start"
+        - "pnpm lint"
+        - "pnpm format"
+        - "pnpm typecheck"
+        - "pnpm preview"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: pnpm-run-passthrough
+    match:
+      type: prefix
+      patterns: ["pnpm run", "pnpm"]
+    action: { type: shell, command: "pnpm", args_passthrough: true }
+    safety: write-confined
+
+  - id: pnpm-list
+    match:
+      type: exact
+      patterns: ["pnpm list", "pnpm ls", "pnpm list --depth=0"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: pnpm-list-passthrough
+    match:
+      type: prefix
+      patterns: ["pnpm list", "pnpm ls"]
+    action: { type: shell, command: "pnpm list", args_passthrough: true }
+    safety: read-only
+
+  - id: pnpm-outdated
+    match:
+      type: exact
+      patterns: ["pnpm outdated"]
+    action: { type: shell, command: "pnpm outdated" }
+    safety: write-network
+
+  - id: pnpm-audit
+    match:
+      type: prefix
+      patterns: ["pnpm audit"]
+    action: { type: shell, command: "pnpm audit", args_passthrough: true }
+    safety: write-network
+
+  - id: pnpm-store-prune
+    match:
+      type: exact
+      patterns: ["pnpm store prune"]
+    action: { type: shell, command: "pnpm store prune" }
+    safety: write-confined
+
+  - id: pnpm-why
+    match:
+      type: prefix
+      patterns: ["pnpm why"]
+    action: { type: shell, command: "pnpm why", args_passthrough: true }
+    safety: read-only
+
+  - id: pnpm-version
+    match:
+      type: exact
+      patterns: ["pnpm -v", "pnpm --version"]
+    action: { type: shell, command: "pnpm -v" }
+    safety: read-only
+
+  - id: pnpm-exec
+    match:
+      type: prefix
+      patterns: ["pnpm exec", "pnpm dlx"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network

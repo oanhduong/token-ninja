@@ -1,0 +1,198 @@
+domain: npm
+rules:
+  - id: npm-install-all
+    match:
+      type: exact
+      patterns:
+        - "npm install"
+        - "npm i"
+        - "npm ci"
+        - "npm install --production"
+        - "npm i --production"
+        - "npm install --omit=dev"
+        - "npm install --frozen-lockfile"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: npm-install-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "npm install -g"
+        - "npm i -g"
+        - "npm install --global"
+        - "npm install -D"
+        - "npm i -D"
+        - "npm install --save-dev"
+        - "npm install --save"
+        - "npm install --no-save"
+        - "npm install"
+        - "npm i"
+        - "npm ci"
+    action: { type: shell, command: "npm", args_passthrough: true }
+    safety: write-network
+
+  - id: npm-uninstall
+    match:
+      type: prefix
+      patterns: ["npm uninstall -g", "npm uninstall -D", "npm uninstall", "npm un", "npm remove", "npm rm"]
+    action: { type: shell, command: "npm", args_passthrough: true }
+    safety: write-confined
+
+  - id: npm-run-known
+    match:
+      type: exact
+      patterns:
+        - "npm test"
+        - "npm t"
+        - "npm start"
+        - "npm run build"
+        - "npm run dev"
+        - "npm run lint"
+        - "npm run format"
+        - "npm run typecheck"
+        - "npm run check"
+        - "npm run test"
+        - "npm run test:watch"
+        - "npm run test:coverage"
+        - "npm run test:unit"
+        - "npm run test:e2e"
+        - "npm run start:dev"
+        - "npm run serve"
+        - "npm run preview"
+        - "npm run prepare"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: npm-run-any
+    match:
+      type: prefix
+      patterns: ["npm run"]
+    action: { type: shell, command: "npm run", args_passthrough: true }
+    safety: write-confined
+
+  - id: npm-exec
+    match:
+      type: prefix
+      patterns: ["npm exec", "npx"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: npm-exec-passthrough
+    match:
+      type: regex
+      patterns: ["^(npm\\s+exec|npx)\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: write-network
+
+  - id: npm-list
+    match:
+      type: exact
+      patterns: ["npm list", "npm ls", "npm list --depth=0", "npm ls --depth=0", "npm list -g", "npm ls -g"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: npm-list-passthrough
+    match:
+      type: prefix
+      patterns: ["npm list", "npm ls"]
+    action: { type: shell, command: "npm list", args_passthrough: true }
+    safety: read-only
+
+  - id: npm-outdated
+    match:
+      type: exact
+      patterns: ["npm outdated", "npm outdated --long"]
+    action: { type: shell, command: "npm outdated" }
+    safety: write-network
+
+  - id: npm-audit
+    match:
+      type: exact
+      patterns: ["npm audit", "npm audit --production", "npm audit fix", "npm audit fix --force"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: npm-audit-passthrough
+    match:
+      type: prefix
+      patterns: ["npm audit"]
+    action: { type: shell, command: "npm audit", args_passthrough: true }
+    safety: write-network
+
+  - id: npm-view
+    match:
+      type: prefix
+      patterns: ["npm view", "npm info", "npm show"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: npm-view-passthrough
+    match:
+      type: regex
+      patterns: ["^(npm\\s+view|npm\\s+info|npm\\s+show)\\s+(.+)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: write-network
+
+  - id: npm-search
+    match:
+      type: prefix
+      patterns: ["npm search"]
+    action: { type: shell, command: "npm search", args_passthrough: true }
+    safety: write-network
+
+  - id: npm-init
+    match:
+      type: exact
+      patterns: ["npm init", "npm init -y", "npm init --yes"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: npm-init-passthrough
+    match:
+      type: prefix
+      patterns: ["npm init"]
+    action: { type: shell, command: "npm init", args_passthrough: true }
+    safety: write-network
+
+  - id: npm-version
+    match:
+      type: exact
+      patterns: ["npm -v", "npm --version", "npm version", "npm whoami"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: npm-version-passthrough
+    match:
+      type: regex
+      patterns: ["^npm\\s+(-v|--version|version|whoami)$"]
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: npm-config-list
+    match:
+      type: exact
+      patterns: ["npm config list", "npm config ls", "npm config get"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: npm-config-list-passthrough
+    match:
+      type: prefix
+      patterns: ["npm config list", "npm config get"]
+    action: { type: shell, command: "npm config", args_passthrough: true }
+    safety: read-only
+
+  - id: npm-cache
+    match:
+      type: exact
+      patterns: ["npm cache clean --force", "npm cache verify"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: npm-cache-passthrough
+    match:
+      type: prefix
+      patterns: ["npm cache"]
+    action: { type: shell, command: "npm cache", args_passthrough: true }
+    safety: write-confined
