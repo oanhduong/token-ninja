@@ -1,0 +1,365 @@
+domain: cloud
+rules:
+  # ── AWS CLI ─────────────────────────────────────────────────────────
+  - id: aws-sts
+    match:
+      type: exact
+      patterns:
+        - "aws sts get-caller-identity"
+        - "aws sts get-session-token"
+        - "aws configure list"
+        - "aws configure list-profiles"
+        - "aws --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: aws-s3-ls
+    match:
+      type: prefix
+      patterns: ["aws s3 ls", "aws s3api list-buckets"]
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  - id: aws-ec2-describe
+    match:
+      type: prefix
+      patterns:
+        - "aws ec2 describe-instances"
+        - "aws ec2 describe-regions"
+        - "aws ec2 describe-vpcs"
+        - "aws ec2 describe-subnets"
+        - "aws ec2 describe-security-groups"
+        - "aws ec2 describe-images"
+        - "aws ec2 describe-volumes"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  - id: aws-iam-list
+    match:
+      type: prefix
+      patterns:
+        - "aws iam list-users"
+        - "aws iam list-roles"
+        - "aws iam list-policies"
+        - "aws iam list-groups"
+        - "aws iam get-user"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  - id: aws-logs
+    match:
+      type: prefix
+      patterns:
+        - "aws logs describe-log-groups"
+        - "aws logs describe-log-streams"
+        - "aws logs tail"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  - id: aws-lambda-list
+    match:
+      type: prefix
+      patterns:
+        - "aws lambda list-functions"
+        - "aws lambda get-function"
+        - "aws lambda list-layers"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  - id: aws-cloudformation-list
+    match:
+      type: prefix
+      patterns:
+        - "aws cloudformation list-stacks"
+        - "aws cloudformation describe-stacks"
+        - "aws cloudformation describe-stack-events"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  - id: aws-eks
+    match:
+      type: prefix
+      patterns:
+        - "aws eks list-clusters"
+        - "aws eks describe-cluster"
+        - "aws eks list-nodegroups"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  - id: aws-rds
+    match:
+      type: prefix
+      patterns:
+        - "aws rds describe-db-instances"
+        - "aws rds describe-db-clusters"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  # ── Azure CLI ───────────────────────────────────────────────────────
+  - id: az-account
+    match:
+      type: exact
+      patterns:
+        - "az account show"
+        - "az account list"
+        - "az account list-locations"
+        - "az --version"
+        - "az version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: az-group-list
+    match:
+      type: prefix
+      patterns:
+        - "az group list"
+        - "az group show"
+    action: { type: shell, command: "az", args_passthrough: true }
+    safety: write-network
+
+  - id: az-vm-list
+    match:
+      type: prefix
+      patterns:
+        - "az vm list"
+        - "az vm show"
+        - "az vm list-ip-addresses"
+        - "az vm list-sizes"
+    action: { type: shell, command: "az", args_passthrough: true }
+    safety: write-network
+
+  - id: az-storage-list
+    match:
+      type: prefix
+      patterns:
+        - "az storage account list"
+        - "az storage blob list"
+        - "az storage container list"
+    action: { type: shell, command: "az", args_passthrough: true }
+    safety: write-network
+
+  - id: az-aks-list
+    match:
+      type: prefix
+      patterns:
+        - "az aks list"
+        - "az aks show"
+        - "az aks get-credentials"
+    action: { type: shell, command: "az", args_passthrough: true }
+    safety: write-network
+
+  # ── Google Cloud ────────────────────────────────────────────────────
+  - id: gcloud-info
+    match:
+      type: exact
+      patterns:
+        - "gcloud auth list"
+        - "gcloud config list"
+        - "gcloud config configurations list"
+        - "gcloud projects list"
+        - "gcloud info"
+        - "gcloud version"
+        - "gcloud --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: gcloud-compute
+    match:
+      type: prefix
+      patterns:
+        - "gcloud compute instances list"
+        - "gcloud compute instances describe"
+        - "gcloud compute networks list"
+        - "gcloud compute disks list"
+        - "gcloud compute zones list"
+        - "gcloud compute regions list"
+    action: { type: shell, command: "gcloud", args_passthrough: true }
+    safety: write-network
+
+  - id: gcloud-container
+    match:
+      type: prefix
+      patterns:
+        - "gcloud container clusters list"
+        - "gcloud container clusters describe"
+        - "gcloud container clusters get-credentials"
+        - "gcloud container images list"
+    action: { type: shell, command: "gcloud", args_passthrough: true }
+    safety: write-network
+
+  - id: gcloud-functions
+    match:
+      type: prefix
+      patterns:
+        - "gcloud functions list"
+        - "gcloud functions describe"
+        - "gcloud run services list"
+        - "gcloud run services describe"
+    action: { type: shell, command: "gcloud", args_passthrough: true }
+    safety: write-network
+
+  - id: gsutil-ls
+    match:
+      type: prefix
+      patterns: ["gsutil ls", "gsutil du", "gsutil stat"]
+    action: { type: shell, command: "gsutil", args_passthrough: true }
+    safety: write-network
+
+  # ── Vercel ──────────────────────────────────────────────────────────
+  - id: vercel-info
+    match:
+      type: exact
+      patterns:
+        - "vercel whoami"
+        - "vercel ls"
+        - "vercel list"
+        - "vercel projects ls"
+        - "vercel env ls"
+        - "vercel domains ls"
+        - "vercel teams ls"
+        - "vercel --version"
+        - "vercel -v"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: vercel-logs
+    match:
+      type: prefix
+      patterns: ["vercel logs", "vercel inspect"]
+    action: { type: shell, command: "vercel", args_passthrough: true }
+    safety: write-network
+
+  # ── Netlify ─────────────────────────────────────────────────────────
+  - id: netlify-info
+    match:
+      type: exact
+      patterns:
+        - "netlify status"
+        - "netlify sites:list"
+        - "netlify env:list"
+        - "netlify functions:list"
+        - "netlify --version"
+        - "netlify -v"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: netlify-logs
+    match:
+      type: prefix
+      patterns: ["netlify logs", "netlify deploy --build"]
+    action: { type: shell, command: "netlify", args_passthrough: true }
+    safety: write-network
+
+  # ── Heroku ──────────────────────────────────────────────────────────
+  - id: heroku-info
+    match:
+      type: exact
+      patterns:
+        - "heroku apps"
+        - "heroku apps:info"
+        - "heroku auth:whoami"
+        - "heroku whoami"
+        - "heroku addons"
+        - "heroku releases"
+        - "heroku config"
+        - "heroku ps"
+        - "heroku --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: heroku-logs
+    match:
+      type: prefix
+      patterns: ["heroku logs --tail", "heroku logs -t", "heroku logs"]
+    action: { type: shell, command: "heroku logs", args_passthrough: true }
+    safety: write-network
+
+  # ── Fly.io ──────────────────────────────────────────────────────────
+  - id: fly-info
+    match:
+      type: exact
+      patterns:
+        - "fly apps list"
+        - "fly status"
+        - "fly auth whoami"
+        - "fly machines list"
+        - "fly volumes list"
+        - "fly secrets list"
+        - "fly version"
+        - "flyctl apps list"
+        - "flyctl status"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: fly-logs
+    match:
+      type: prefix
+      patterns: ["fly logs", "flyctl logs"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  # ── Railway ─────────────────────────────────────────────────────────
+  - id: railway-info
+    match:
+      type: exact
+      patterns:
+        - "railway status"
+        - "railway whoami"
+        - "railway variables"
+        - "railway logs"
+        - "railway --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── Render / Supabase / DigitalOcean ────────────────────────────────
+  - id: render-info
+    match:
+      type: exact
+      patterns: ["render services", "render --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: supabase-info
+    match:
+      type: exact
+      patterns:
+        - "supabase projects list"
+        - "supabase status"
+        - "supabase functions list"
+        - "supabase --version"
+        - "supabase -v"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: doctl-info
+    match:
+      type: prefix
+      patterns:
+        - "doctl auth list"
+        - "doctl compute droplet list"
+        - "doctl kubernetes cluster list"
+        - "doctl account get"
+        - "doctl databases list"
+        - "doctl apps list"
+    action: { type: shell, command: "doctl", args_passthrough: true }
+    safety: write-network
+
+  # ── Natural-language shortcuts ──────────────────────────────────────
+  - id: nl-aws-identity
+    match:
+      type: nl
+      keywords:
+        - ["aws", "identity"]
+        - ["who", "am", "i", "aws"]
+        - ["current", "aws", "account"]
+    action: { type: shell, command: "aws sts get-caller-identity" }
+    safety: write-network
+
+  - id: nl-gcloud-project
+    match:
+      type: nl
+      keywords:
+        - ["current", "gcloud", "project"]
+        - ["active", "gcloud", "project"]
+    action: { type: shell, command: "gcloud config list --format=value(core.project)" }
+    safety: write-network

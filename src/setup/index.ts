@@ -5,6 +5,8 @@ import { configDir, configPath, loadConfig, saveConfig, DEFAULT_CONFIG } from ".
 import type { Config } from "../config/user-config.js";
 import { detectShell, installBlock, uninstallBlock, rcFileFor } from "./shell-install.js";
 import type { ShellName } from "./shell-install.js";
+import { installMcp, uninstallMcp } from "./mcp-install.js";
+import type { McpInstallResult } from "./mcp-install.js";
 import { logger } from "../utils/logger.js";
 
 export interface SetupOpts {
@@ -16,6 +18,8 @@ export interface SetupOpts {
   quiet?: boolean;
   /** Don't write anything; just report what would change. */
   dryRun?: boolean;
+  /** Skip auto-registering `ninja mcp` with Claude Code / Cursor / Claude Desktop. */
+  noMcp?: boolean;
 }
 
 function normalizeShell(s: string | undefined): ShellName {
@@ -78,11 +82,25 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
       ].join("\n")
     );
     process.stdout.write(block + "\n");
+    if (!opts.noMcp) {
+      const mcp = await installMcp({ dryRun: true });
+      for (const r of mcp) {
+        if (r.changed) {
+          process.stdout.write(
+            `[dry-run] would register MCP for ${r.target.label} at ${r.target.path}${r.created ? " (create)" : ""}\n`
+          );
+        } else if (r.skippedReason) {
+          process.stdout.write(`[dry-run] skip MCP for ${r.target.label}: ${r.skippedReason}\n`);
+        }
+      }
+    }
     return 0;
   }
 
   const result = await installBlock(block, shell);
   await ensureConfig(hooked[0]);
+
+  const mcpResults: McpInstallResult[] = opts.noMcp ? [] : await installMcp();
 
   if (!opts.quiet) {
     const lines = [
@@ -94,6 +112,20 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
     ];
     if (result.backupPath) lines.push(`  backup      : ${result.backupPath}`);
     if (!result.changed) lines.push(`  (already installed — no changes)`);
+
+    if (!opts.noMcp) {
+      const registered = mcpResults.filter((r) => r.changed).map((r) => r.target.label);
+      const skipped = mcpResults.filter((r) => r.skippedReason);
+      if (registered.length > 0) {
+        lines.push(`  mcp         : registered ninja mcp with ${registered.join(", ")}`);
+      } else {
+        lines.push(`  mcp         : already registered (or no MCP clients detected)`);
+      }
+      for (const s of skipped) {
+        lines.push(`  mcp warning : ${s.target.label}: ${s.skippedReason}`);
+      }
+    }
+
     lines.push(``);
     lines.push(`Open a new terminal (or: source ${result.rcFile}) and use your AI tool normally.`);
     lines.push(`Commands token-ninja recognizes run locally; everything else passes through.`);
@@ -107,12 +139,17 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
 export async function runUninstall(opts: { shell?: string; quiet?: boolean } = {}): Promise<number> {
   const shell = normalizeShell(opts.shell);
   const result = await uninstallBlock(shell);
+  const mcp = await uninstallMcp();
   if (!opts.quiet) {
     if (result.changed) {
       process.stdout.write(`token-ninja: removed managed block from ${result.rcFile}\n`);
       process.stdout.write(`Open a new terminal (or: source ${result.rcFile}) to restore original AI tool behavior.\n`);
     } else {
       process.stdout.write(`token-ninja: no managed block found in ${result.rcFile}\n`);
+    }
+    const unregistered = mcp.filter((r) => r.changed).map((r) => r.target.label);
+    if (unregistered.length > 0) {
+      process.stdout.write(`token-ninja: removed MCP entry from ${unregistered.join(", ")}\n`);
     }
   }
   return 0;

@@ -1,0 +1,217 @@
+domain: iac
+rules:
+  # ── Terraform ───────────────────────────────────────────────────────
+  - id: terraform-info
+    match:
+      type: exact
+      patterns:
+        - "terraform version"
+        - "terraform --version"
+        - "terraform -v"
+        - "terraform workspace list"
+        - "terraform workspace show"
+        - "terraform providers"
+        - "terraform fmt"
+        - "terraform fmt -check"
+        - "terraform fmt -recursive"
+        - "terraform validate"
+        - "terraform show"
+        - "terraform output"
+        - "terraform output -json"
+        - "terraform state list"
+        - "terraform state pull"
+        - "terraform init"
+        - "terraform init -upgrade"
+        - "terraform init -reconfigure"
+        - "terraform plan"
+        - "terraform plan -out=tfplan"
+        - "terraform graph"
+        - "terraform refresh"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: terraform-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "terraform plan"
+        - "terraform fmt"
+        - "terraform validate"
+        - "terraform show"
+        - "terraform output"
+        - "terraform state list"
+        - "terraform state show"
+        - "terraform workspace"
+        - "terraform providers"
+        - "terraform init"
+        - "terraform console"
+    action: { type: shell, command: "terraform", args_passthrough: true }
+    safety: write-network
+
+  # ── tofu (OpenTofu) ─────────────────────────────────────────────────
+  - id: tofu-info
+    match:
+      type: exact
+      patterns:
+        - "tofu version"
+        - "tofu --version"
+        - "tofu workspace list"
+        - "tofu fmt -check"
+        - "tofu validate"
+        - "tofu plan"
+        - "tofu init"
+        - "tofu providers"
+        - "tofu output"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── Ansible ─────────────────────────────────────────────────────────
+  - id: ansible-info
+    match:
+      type: exact
+      patterns:
+        - "ansible --version"
+        - "ansible-playbook --version"
+        - "ansible-galaxy --version"
+        - "ansible-lint --version"
+        - "ansible-inventory --list"
+        - "ansible-inventory --graph"
+        - "ansible-config list"
+        - "ansible-config dump"
+        - "ansible-doc -l"
+        - "ansible-vault --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: ansible-playbook-check
+    match:
+      type: prefix
+      patterns:
+        - "ansible-playbook --syntax-check"
+        - "ansible-playbook --check"
+        - "ansible-playbook --list-hosts"
+        - "ansible-playbook --list-tasks"
+        - "ansible-playbook --list-tags"
+    action: { type: shell, command: "ansible-playbook", args_passthrough: true }
+    safety: read-only
+
+  - id: ansible-galaxy-list
+    match:
+      type: prefix
+      patterns:
+        - "ansible-galaxy list"
+        - "ansible-galaxy collection list"
+        - "ansible-galaxy role list"
+    action: { type: shell, command: "ansible-galaxy", args_passthrough: true }
+    safety: read-only
+
+  - id: ansible-inventory-passthrough
+    match:
+      type: prefix
+      patterns: ["ansible-inventory"]
+    action: { type: shell, command: "ansible-inventory", args_passthrough: true }
+    safety: read-only
+
+  - id: ansible-lint
+    match:
+      type: prefix
+      patterns: ["ansible-lint"]
+    action: { type: shell, command: "ansible-lint", args_passthrough: true }
+    safety: read-only
+
+  # ── Vagrant ─────────────────────────────────────────────────────────
+  - id: vagrant-info
+    match:
+      type: exact
+      patterns:
+        - "vagrant status"
+        - "vagrant global-status"
+        - "vagrant version"
+        - "vagrant --version"
+        - "vagrant box list"
+        - "vagrant plugin list"
+        - "vagrant validate"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: vagrant-lifecycle
+    match:
+      type: prefix
+      patterns:
+        - "vagrant up"
+        - "vagrant halt"
+        - "vagrant reload"
+        - "vagrant suspend"
+        - "vagrant resume"
+        - "vagrant provision"
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  # ── Pulumi ──────────────────────────────────────────────────────────
+  - id: pulumi-info
+    match:
+      type: exact
+      patterns:
+        - "pulumi version"
+        - "pulumi whoami"
+        - "pulumi stack ls"
+        - "pulumi stack"
+        - "pulumi preview"
+        - "pulumi config"
+        - "pulumi plugin ls"
+        - "pulumi logout"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: pulumi-preview
+    match:
+      type: prefix
+      patterns: ["pulumi preview", "pulumi stack", "pulumi config", "pulumi logs", "pulumi plugin ls"]
+    action: { type: shell, command: "pulumi", args_passthrough: true }
+    safety: write-network
+
+  # ── Packer ──────────────────────────────────────────────────────────
+  - id: packer-info
+    match:
+      type: exact
+      patterns:
+        - "packer version"
+        - "packer --version"
+        - "packer fmt -check"
+        - "packer validate"
+        - "packer inspect"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: packer-passthrough
+    match:
+      type: prefix
+      patterns: ["packer validate", "packer fmt", "packer inspect"]
+    action: { type: shell, command: "packer", args_passthrough: true }
+    safety: read-only
+
+  # ── CDK ─────────────────────────────────────────────────────────────
+  - id: cdk-info
+    match:
+      type: exact
+      patterns:
+        - "cdk --version"
+        - "cdk list"
+        - "cdk ls"
+        - "cdk doctor"
+        - "cdk synth"
+        - "cdk diff"
+        - "cdktf --version"
+        - "cdktf list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── Natural-language shortcuts ──────────────────────────────────────
+  - id: nl-terraform-plan
+    match:
+      type: nl
+      keywords:
+        - ["terraform", "plan"]
+        - ["tf", "plan"]
+    action: { type: shell, command: "terraform plan" }
+    safety: write-network

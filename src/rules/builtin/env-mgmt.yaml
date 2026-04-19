@@ -1,0 +1,207 @@
+domain: env-mgmt
+rules:
+  # ── direnv ──────────────────────────────────────────────────────────
+  - id: direnv-info
+    match:
+      type: exact
+      patterns:
+        - "direnv status"
+        - "direnv version"
+        - "direnv --version"
+        - "direnv show_dump"
+        - "direnv allow"
+        - "direnv deny"
+        - "direnv reload"
+        - "direnv edit"
+        - "direnv prune"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  # ── asdf ────────────────────────────────────────────────────────────
+  - id: asdf-info
+    match:
+      type: exact
+      patterns:
+        - "asdf --version"
+        - "asdf current"
+        - "asdf list"
+        - "asdf plugin list"
+        - "asdf plugin list all"
+        - "asdf plugin-list"
+        - "asdf latest --all"
+        - "asdf where"
+        - "asdf which"
+        - "asdf info"
+        - "asdf doctor"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: asdf-passthrough
+    match:
+      type: prefix
+      patterns: ["asdf current", "asdf list", "asdf plugin list", "asdf where", "asdf which", "asdf latest", "asdf install", "asdf uninstall", "asdf global", "asdf local", "asdf shell"]
+    action: { type: shell, command: "asdf", args_passthrough: true }
+    safety: write-confined
+
+  # ── mise (aka rtx) ──────────────────────────────────────────────────
+  - id: mise-info
+    match:
+      type: exact
+      patterns:
+        - "mise --version"
+        - "mise -v"
+        - "mise version"
+        - "mise ls"
+        - "mise list"
+        - "mise current"
+        - "mise ls-remote"
+        - "mise env"
+        - "mise doctor"
+        - "mise plugin ls"
+        - "mise plugin list"
+        - "mise settings"
+        - "mise where"
+        - "mise which"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: mise-passthrough
+    match:
+      type: prefix
+      patterns: ["mise ls", "mise list", "mise install", "mise uninstall", "mise use", "mise exec", "mise run", "mise tasks", "mise upgrade", "mise plugin"]
+    action: { type: shell, command: "mise", args_passthrough: true }
+    safety: write-network
+
+  # ── nvm (only read-ish) ─────────────────────────────────────────────
+  - id: nvm-info
+    match:
+      type: exact
+      patterns:
+        - "nvm --version"
+        - "nvm current"
+        - "nvm ls"
+        - "nvm list"
+        - "nvm which"
+        - "nvm version"
+        - "nvm deactivate"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── pyenv / rbenv / jenv ────────────────────────────────────────────
+  - id: pyenv-info
+    match:
+      type: exact
+      patterns:
+        - "pyenv --version"
+        - "pyenv version"
+        - "pyenv versions"
+        - "pyenv which python"
+        - "pyenv which pip"
+        - "pyenv which python3"
+        - "pyenv local"
+        - "pyenv global"
+        - "pyenv shell"
+        - "pyenv doctor"
+        - "pyenv rehash"
+        - "pyenv commands"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: pyenv-passthrough
+    match:
+      type: prefix
+      patterns: ["pyenv install", "pyenv uninstall", "pyenv virtualenv", "pyenv activate", "pyenv deactivate", "pyenv local", "pyenv global", "pyenv shell"]
+    action: { type: shell, command: "pyenv", args_passthrough: true }
+    safety: write-network
+
+  - id: rbenv-info
+    match:
+      type: exact
+      patterns:
+        - "rbenv --version"
+        - "rbenv version"
+        - "rbenv versions"
+        - "rbenv which ruby"
+        - "rbenv local"
+        - "rbenv global"
+        - "rbenv shell"
+        - "rbenv doctor"
+        - "rbenv rehash"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: jenv-info
+    match:
+      type: exact
+      patterns:
+        - "jenv --version"
+        - "jenv version"
+        - "jenv versions"
+        - "jenv doctor"
+        - "jenv which java"
+        - "jenv commands"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── Nix ─────────────────────────────────────────────────────────────
+  - id: nix-info
+    match:
+      type: exact
+      patterns:
+        - "nix --version"
+        - "nix-env --version"
+        - "nix doctor"
+        - "nix show-config"
+        - "nix flake metadata"
+        - "nix flake show"
+        - "nix flake check"
+        - "nix flake lock"
+        - "nix-channel --list"
+        - "nix-channel --update"
+        - "nix-store --version"
+        - "nix-env -q"
+        - "nix-env --query"
+        - "nix-env -qa"
+        - "nix-shell --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: nix-passthrough
+    match:
+      type: prefix
+      patterns: ["nix flake", "nix build", "nix develop", "nix search", "nix run", "nix profile list", "nix store gc", "nix-env -q", "nix-env --query"]
+    action: { type: shell, command: "nix", args_passthrough: true }
+    safety: write-network
+
+  # ── SDKMAN ──────────────────────────────────────────────────────────
+  - id: sdk-info
+    match:
+      type: exact
+      patterns:
+        - "sdk version"
+        - "sdk current"
+        - "sdk list"
+        - "sdk ls"
+        - "sdk offline"
+        - "sdk help"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── mamba (conda core lives in python.yaml) ─────────────────────────
+  - id: mamba-info
+    match:
+      type: exact
+      patterns:
+        - "mamba --version"
+        - "mamba info"
+        - "mamba env list"
+        - "mamba list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: mamba-passthrough
+    match:
+      type: prefix
+      patterns: ["mamba create", "mamba install", "mamba update", "mamba env create", "mamba env update", "mamba env remove"]
+    action: { type: shell, command: "mamba", args_passthrough: true }
+    safety: write-network

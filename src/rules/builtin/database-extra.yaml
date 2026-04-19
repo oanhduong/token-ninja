@@ -1,0 +1,175 @@
+domain: database-extra
+rules:
+  # ── PostgreSQL tooling ──────────────────────────────────────────────
+  - id: pg-info
+    match:
+      type: exact
+      patterns:
+        - "pg_isready"
+        - "pg_config --version"
+        - "pg_config"
+        - "pg_lsclusters"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: pg-isready-passthrough
+    match:
+      type: prefix
+      patterns: ["pg_isready -h", "pg_isready -p", "pg_isready -U"]
+    action: { type: shell, command: "pg_isready", args_passthrough: true }
+    safety: read-only
+
+  # ── MongoDB (Atlas CLI) ─────────────────────────────────────────────
+  - id: atlas-info
+    match:
+      type: exact
+      patterns:
+        - "atlas --version"
+        - "atlas auth whoami"
+        - "atlas projects list"
+        - "atlas clusters list"
+        - "atlas clusters describe"
+        - "atlas dbusers list"
+        - "atlas networking peering list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── CockroachDB ─────────────────────────────────────────────────────
+  - id: cockroach-info
+    match:
+      type: exact
+      patterns:
+        - "cockroach version"
+        - "cockroach --version"
+        - "cockroach node status"
+        - "cockroach node ls"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── ClickHouse ──────────────────────────────────────────────────────
+  - id: clickhouse-info
+    match:
+      type: exact
+      patterns:
+        - "clickhouse-client --version"
+        - "clickhouse --version"
+        - "clickhouse server --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── InfluxDB ────────────────────────────────────────────────────────
+  - id: influx-info
+    match:
+      type: exact
+      patterns:
+        - "influx version"
+        - "influx --version"
+        - "influx bucket list"
+        - "influx org list"
+        - "influx config list"
+        - "influx ping"
+        - "influxd version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── Cassandra (cqlsh) ───────────────────────────────────────────────
+  - id: cassandra-info
+    match:
+      type: exact
+      patterns:
+        - "cqlsh --version"
+        - "cqlsh -e \"DESCRIBE KEYSPACES\""
+        - "cqlsh -e 'DESCRIBE KEYSPACES'"
+        - "nodetool status"
+        - "nodetool info"
+        - "nodetool version"
+        - "nodetool ring"
+        - "nodetool describecluster"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── DynamoDB local / scripts ────────────────────────────────────────
+  - id: dynamodb-list
+    match:
+      type: exact
+      patterns:
+        - "aws dynamodb list-tables"
+        - "aws dynamodb describe-limits"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: dynamodb-describe
+    match:
+      type: prefix
+      patterns:
+        - "aws dynamodb describe-table"
+        - "aws dynamodb scan"
+        - "aws dynamodb query"
+    action: { type: shell, command: "aws", args_passthrough: true }
+    safety: write-network
+
+  # ── DuckDB ──────────────────────────────────────────────────────────
+  - id: duckdb-info
+    match:
+      type: exact
+      patterns:
+        - "duckdb --version"
+        - "duckdb -version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── Prisma / Drizzle / Sequelize / TypeORM migrations ───────────────
+  - id: prisma-info
+    match:
+      type: exact
+      patterns:
+        - "prisma --version"
+        - "prisma -v"
+        - "prisma generate"
+        - "prisma validate"
+        - "prisma format"
+        - "prisma db pull"
+        - "prisma migrate status"
+        - "prisma migrate diff"
+        - "npx prisma --version"
+        - "npx prisma generate"
+        - "npx prisma validate"
+        - "npx prisma format"
+        - "npx prisma migrate status"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: drizzle-info
+    match:
+      type: exact
+      patterns:
+        - "drizzle-kit --version"
+        - "drizzle-kit check"
+        - "drizzle-kit generate"
+        - "drizzle-kit introspect"
+        - "drizzle-kit studio"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── Sequelize / Knex / TypeORM CLI ──────────────────────────────────
+  - id: sequelize-info
+    match:
+      type: exact
+      patterns:
+        - "sequelize --version"
+        - "sequelize db:migrate:status"
+        - "sequelize-cli --version"
+        - "sequelize-cli db:migrate:status"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: knex-info
+    match:
+      type: exact
+      patterns:
+        - "knex --version"
+        - "knex migrate:list"
+        - "knex migrate:status"
+        - "knex migrate:currentVersion"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network

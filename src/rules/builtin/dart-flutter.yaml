@@ -1,0 +1,75 @@
+domain: dart-flutter
+rules:
+  # ── Dart ────────────────────────────────────────────────────────────
+  - id: dart-info
+    match:
+      type: exact
+      patterns:
+        - "dart --version"
+        - "dart --help"
+        - "dart pub get"
+        - "dart pub upgrade"
+        - "dart pub outdated"
+        - "dart pub deps"
+        - "dart pub downgrade"
+        - "dart analyze"
+        - "dart format ."
+        - "dart format --set-exit-if-changed ."
+        - "dart test"
+        - "dart fix --dry-run"
+        - "dart compile exe"
+        - "dart doc"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: dart-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "dart run"
+        - "dart test"
+        - "dart analyze"
+        - "dart format"
+        - "dart pub"
+        - "dart compile"
+        - "dart fix"
+    action: { type: shell, command: "dart", args_passthrough: true }
+    safety: write-network
+
+  # ── Flutter ─────────────────────────────────────────────────────────
+  - id: flutter-info
+    match:
+      type: exact
+      patterns:
+        - "flutter --version"
+        - "flutter -v"
+        - "flutter doctor"
+        - "flutter doctor -v"
+        - "flutter devices"
+        - "flutter emulators"
+        - "flutter channel"
+        - "flutter config"
+        - "flutter pub get"
+        - "flutter pub upgrade"
+        - "flutter pub outdated"
+        - "flutter pub deps"
+        - "flutter clean"
+        - "flutter analyze"
+        - "flutter test"
+        - "flutter test --coverage"
+        - "flutter precache"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: flutter-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "flutter run"
+        - "flutter build"
+        - "flutter test"
+        - "flutter analyze"
+        - "flutter pub"
+        - "flutter create"
+    action: { type: shell, command: "flutter", args_passthrough: true }
+    safety: write-network

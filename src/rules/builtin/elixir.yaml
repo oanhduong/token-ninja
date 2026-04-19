@@ -1,0 +1,77 @@
+domain: elixir
+rules:
+  - id: mix-info
+    match:
+      type: exact
+      patterns:
+        - "mix --version"
+        - "mix help"
+        - "mix deps"
+        - "mix deps.tree"
+        - "mix deps.get"
+        - "mix deps.update --all"
+        - "mix deps.clean --unused"
+        - "mix compile"
+        - "mix test"
+        - "mix test --cover"
+        - "mix test --trace"
+        - "mix format"
+        - "mix format --check-formatted"
+        - "mix credo"
+        - "mix credo --strict"
+        - "mix dialyzer"
+        - "mix docs"
+        - "mix ecto.migrate"
+        - "mix ecto.rollback"
+        - "mix ecto.gen.migration"
+        - "mix phx.server"
+        - "mix phx.routes"
+        - "mix release"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: mix-passthrough
+    match:
+      type: prefix
+      patterns: ["mix test", "mix compile", "mix format", "mix credo", "mix ecto", "mix phx", "mix run", "mix deps", "mix do", "mix help"]
+    action: { type: shell, command: "mix", args_passthrough: true }
+    safety: write-confined
+
+  - id: elixir-info
+    match:
+      type: exact
+      patterns:
+        - "elixir --version"
+        - "elixir -v"
+        - "iex --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: elixir-passthrough
+    match:
+      type: prefix
+      patterns: ["elixir "]
+    action: { type: shell, command: "elixir", args_passthrough: true }
+    safety: write-confined
+
+  - id: iex-interactive
+    match:
+      type: exact
+      patterns: ["iex", "iex -S mix", "iex -S mix phx.server"]
+    action:
+      type: passthrough
+      reason: "iex is an interactive REPL"
+    safety: read-only
+
+  - id: erlang-info
+    match:
+      type: exact
+      patterns:
+        - "erl -version"
+        - "erlc --version"
+        - "rebar3 --version"
+        - "rebar3 compile"
+        - "rebar3 eunit"
+        - "rebar3 ct"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined

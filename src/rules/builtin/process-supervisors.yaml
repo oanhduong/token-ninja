@@ -1,0 +1,146 @@
+domain: process-supervisors
+rules:
+  # ── pm2 ─────────────────────────────────────────────────────────────
+  - id: pm2-info
+    match:
+      type: exact
+      patterns:
+        - "pm2 list"
+        - "pm2 ls"
+        - "pm2 status"
+        - "pm2 jlist"
+        - "pm2 monit"
+        - "pm2 info"
+        - "pm2 show"
+        - "pm2 env"
+        - "pm2 --version"
+        - "pm2 -v"
+        - "pm2 prettylist"
+        - "pm2 dump"
+        - "pm2 describe"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: pm2-logs
+    match:
+      type: prefix
+      patterns: ["pm2 logs", "pm2 flush"]
+    action: { type: shell, command: "pm2", args_passthrough: true }
+    safety: read-only
+
+  - id: pm2-lifecycle
+    match:
+      type: prefix
+      patterns:
+        - "pm2 start"
+        - "pm2 stop"
+        - "pm2 restart"
+        - "pm2 reload"
+        - "pm2 delete"
+        - "pm2 scale"
+        - "pm2 save"
+        - "pm2 resurrect"
+    action: { type: shell, command: "pm2", args_passthrough: true }
+    safety: write-confined
+
+  # ── systemctl --user (rootless) ─────────────────────────────────────
+  - id: systemctl-user-info
+    match:
+      type: exact
+      patterns:
+        - "systemctl --user list-units"
+        - "systemctl --user list-unit-files"
+        - "systemctl --user list-timers"
+        - "systemctl --user list-sockets"
+        - "systemctl --user --failed"
+        - "systemctl --user daemon-reload"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: systemctl-user-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "systemctl --user status"
+        - "systemctl --user is-active"
+        - "systemctl --user is-enabled"
+        - "systemctl --user cat"
+        - "systemctl --user show"
+        - "systemctl --user list-units"
+        - "systemctl --user list-unit-files"
+    action: { type: shell, command: "systemctl --user", args_passthrough: true }
+    safety: read-only
+
+  - id: systemctl-status-rootless
+    match:
+      type: prefix
+      patterns:
+        - "systemctl status"
+        - "systemctl is-active"
+        - "systemctl is-enabled"
+        - "systemctl is-failed"
+        - "systemctl list-units"
+        - "systemctl list-unit-files"
+        - "systemctl list-timers"
+        - "systemctl cat"
+        - "systemctl show"
+        - "systemctl --failed"
+        - "systemctl --version"
+    action: { type: shell, command: "systemctl", args_passthrough: true }
+    safety: read-only
+
+  - id: journalctl-read
+    match:
+      type: prefix
+      patterns:
+        - "journalctl --user"
+        - "journalctl -u"
+        - "journalctl --since"
+        - "journalctl --boot"
+        - "journalctl -xe"
+        - "journalctl -f"
+    action: { type: shell, command: "journalctl", args_passthrough: true }
+    safety: read-only
+
+  - id: launchctl-info
+    match:
+      type: exact
+      patterns:
+        - "launchctl list"
+        - "launchctl print gui"
+        - "launchctl print user"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── foreman / overmind ──────────────────────────────────────────────
+  - id: foreman-info
+    match:
+      type: exact
+      patterns:
+        - "foreman version"
+        - "foreman check"
+        - "foreman start"
+        - "overmind --version"
+        - "overmind ps"
+        - "overmind status"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: overmind-passthrough
+    match:
+      type: prefix
+      patterns: ["overmind start", "overmind restart", "overmind stop", "overmind connect"]
+    action: { type: shell, command: "overmind", args_passthrough: true }
+    safety: write-confined
+
+  # ── supervisord ─────────────────────────────────────────────────────
+  - id: supervisorctl-info
+    match:
+      type: exact
+      patterns:
+        - "supervisorctl status"
+        - "supervisorctl pid"
+        - "supervisorctl version"
+        - "supervisorctl avail"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only

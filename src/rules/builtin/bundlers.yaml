@@ -1,0 +1,199 @@
+domain: bundlers
+rules:
+  # ── Vite ────────────────────────────────────────────────────────────
+  - id: vite-common
+    match:
+      type: exact
+      patterns:
+        - "vite"
+        - "vite build"
+        - "vite preview"
+        - "vite dev"
+        - "vite --help"
+        - "vite -h"
+        - "vite --version"
+        - "vite -v"
+        - "vite build --mode production"
+        - "vite build --mode development"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: vite-passthrough
+    match:
+      type: prefix
+      patterns: ["vite build", "vite preview", "vite dev", "vite --", "vite -"]
+    action: { type: shell, command: "vite", args_passthrough: true }
+    safety: write-confined
+
+  # ── Turbo (Turborepo) ───────────────────────────────────────────────
+  - id: turbo-common
+    match:
+      type: exact
+      patterns:
+        - "turbo build"
+        - "turbo lint"
+        - "turbo test"
+        - "turbo dev"
+        - "turbo run build"
+        - "turbo run lint"
+        - "turbo run test"
+        - "turbo run dev"
+        - "turbo --version"
+        - "turbo -v"
+        - "turbo ls"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: turbo-passthrough
+    match:
+      type: prefix
+      patterns: ["turbo run", "turbo build", "turbo lint", "turbo test", "turbo dev", "turbo prune"]
+    action: { type: shell, command: "turbo", args_passthrough: true }
+    safety: write-confined
+
+  # ── esbuild ─────────────────────────────────────────────────────────
+  - id: esbuild-info
+    match:
+      type: exact
+      patterns:
+        - "esbuild --version"
+        - "esbuild --help"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: esbuild-passthrough
+    match:
+      type: prefix
+      patterns: ["esbuild"]
+    action: { type: shell, command: "esbuild", args_passthrough: true }
+    safety: write-confined
+
+  # ── SWC ─────────────────────────────────────────────────────────────
+  - id: swc-info
+    match:
+      type: exact
+      patterns:
+        - "swc --version"
+        - "swc --help"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: swc-passthrough
+    match:
+      type: prefix
+      patterns: ["swc "]
+    action: { type: shell, command: "swc", args_passthrough: true }
+    safety: write-confined
+
+  # ── Parcel ──────────────────────────────────────────────────────────
+  - id: parcel-common
+    match:
+      type: exact
+      patterns:
+        - "parcel build"
+        - "parcel serve"
+        - "parcel watch"
+        - "parcel --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: parcel-passthrough
+    match:
+      type: prefix
+      patterns: ["parcel build", "parcel serve", "parcel watch"]
+    action: { type: shell, command: "parcel", args_passthrough: true }
+    safety: write-confined
+
+  # ── Rollup ──────────────────────────────────────────────────────────
+  - id: rollup-info
+    match:
+      type: exact
+      patterns:
+        - "rollup --version"
+        - "rollup -v"
+        - "rollup -c"
+        - "rollup --config"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: rollup-passthrough
+    match:
+      type: prefix
+      patterns: ["rollup -c", "rollup --config", "rollup -w"]
+    action: { type: shell, command: "rollup", args_passthrough: true }
+    safety: write-confined
+
+  # ── Webpack ─────────────────────────────────────────────────────────
+  - id: webpack-common
+    match:
+      type: exact
+      patterns:
+        - "webpack"
+        - "webpack --version"
+        - "webpack -v"
+        - "webpack build"
+        - "webpack --mode production"
+        - "webpack --mode development"
+        - "webpack serve"
+        - "webpack-cli --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: webpack-passthrough
+    match:
+      type: prefix
+      patterns: ["webpack build", "webpack --mode", "webpack serve", "webpack-dev-server"]
+    action: { type: shell, command: "{{input}}" }
+    safety: write-confined
+
+  # ── Rspack / Rsbuild / Tsup ─────────────────────────────────────────
+  - id: rspack-info
+    match:
+      type: exact
+      patterns:
+        - "rspack --version"
+        - "rspack build"
+        - "rspack dev"
+        - "rsbuild --version"
+        - "rsbuild build"
+        - "rsbuild dev"
+        - "rsbuild preview"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: tsup-info
+    match:
+      type: exact
+      patterns:
+        - "tsup"
+        - "tsup --version"
+        - "tsup --watch"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: tsup-passthrough
+    match:
+      type: prefix
+      patterns: ["tsup src", "tsup "]
+    action: { type: shell, command: "tsup", args_passthrough: true }
+    safety: write-confined
+
+  # ── Nx ──────────────────────────────────────────────────────────────
+  - id: nx-info
+    match:
+      type: exact
+      patterns:
+        - "nx --version"
+        - "nx list"
+        - "nx show projects"
+        - "nx graph --file=graph.json"
+        - "nx report"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: nx-passthrough
+    match:
+      type: prefix
+      patterns: ["nx run", "nx build", "nx test", "nx lint", "nx serve", "nx affected", "nx affected:", "nx generate", "nx migrate"]
+    action: { type: shell, command: "nx", args_passthrough: true }
+    safety: write-confined

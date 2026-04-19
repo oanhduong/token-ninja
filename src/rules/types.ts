@@ -42,11 +42,17 @@ export interface RuleFile {
   rules: Rule[];
 }
 
+export interface PrefixEntry {
+  rule: Rule;
+  pattern: string;
+}
+
 export interface LoadedRules {
   rules: Rule[];
   byDomain: Map<string, Rule[]>;
   exactIndex: Map<string, Rule>;
   prefixRules: Rule[];
+  prefixByFirstWord: Map<string, PrefixEntry[]>;
   regexRules: Rule[];
   nlRules: Rule[];
 }
