@@ -27,23 +27,34 @@ unchanged, uninterrupted.
 ---
 
 ```console
-# Inside your Claude Code (or Cursor / Claude Desktop) session — just chat as usual.
-# token-ninja watches every shell call the agent tries to make and handles the
-# deterministic ones locally, without ever hitting the model.
+# Inside your Claude Code session — just chat as usual. When you type a literal
+# command, the UserPromptSubmit hook routes it through token-ninja first. If a
+# high-confidence rule matches, the command runs locally and its output is
+# returned to you — the model is never invoked. Zero input tokens, zero output
+# tokens. Anything conversational flows through to Claude untouched.
 
-you  › what branch am I on?
-ai   › (asks token-ninja) git branch --show-current
-     ⚡ ninja handled locally (git-branch-current) · saved ~420 tokens
-     main
+you › git status
+⚡ token-ninja handled locally (git-status) · saved ~424 tokens
 
-you  › how's the test suite doing?
-ai   › (asks token-ninja) npm test
-     ⚡ ninja handled locally (npm-test) · saved ~480 tokens
-     Tests  234 passed (234)
+On branch main
+nothing to commit, working tree clean
 
-you  › explain this stack trace: …
-ai   › (token-ninja: no match — passing through to the model)
-     …regular model reply…
+you › git branch --show-current
+⚡ token-ninja handled locally (git-branch-list) · saved ~416 tokens
+
+main
+
+you › git log --oneline -10
+⚡ token-ninja handled locally (git-log-passthrough) · saved ~611 tokens
+
+f77f852 chore(main): release 0.3.0
+6932f36 feat(setup): auto-register ninja mcp with Gemini CLI
+1b323b2 fix(router): preserve ANSI colors when the hook short-circuits the model
+89394ec feat(hook): replace PreToolUse Bash hook with UserPromptSubmit
+…
+
+you › explain why this stack trace is blowing up in production
+# No match (conversational) — prompt flows to Claude unchanged.
 ```
 
 No prefix. No new commands to learn. Keep chatting with `claude`, `codex`,
@@ -134,23 +145,33 @@ skipped safely instead of failing the install.
 open your AI tool the way you always do and start chatting:
 
 ```console
-you  › are there any uncommitted changes?
-ai   ⚡ handled by token-ninja (git-status) · saved ~512 tokens
-     On branch main
-     nothing to commit, working tree clean
+you › git status
+⚡ token-ninja handled locally (git-status) · saved ~424 tokens
 
-you  › list the recent commits on this branch
-ai   ⚡ handled by token-ninja (git-log-recent) · saved ~500 tokens
-     9e1c3b4  feat(setup): auto-register ninja mcp
-     48f6643  feat(rules): expand coverage with 10 new domains
-     …
+On branch main
+nothing to commit, working tree clean
 
-you  › what's using port 3000?
-ai   ⚡ handled by token-ninja (port-usage) · saved ~438 tokens
-     node    4812  alice   21u  IPv6  *:3000 (LISTEN)
+you › npm test
+⚡ token-ninja handled locally (npm-run-known) · saved ~2,362 tokens
 
-you  › why is my React state not updating when I click the button?
-ai   # No match — token-ninja passes through. The model answers normally.
+ Test Files  20 passed (20)
+      Tests  268 passed (268)
+   Duration  4.16s
+
+you › docker ps
+⚡ token-ninja handled locally (docker-ps) · saved ~452 tokens
+
+CONTAINER ID   IMAGE         STATUS         NAMES
+a7f3c9e21b4d   postgres:16   Up 2 hours     db
+51e2d7f0a8c6   redis:7       Up 2 hours     cache
+
+you › git diff
+⚡ token-ninja handled locally (git-diff) · saved ~402 tokens
+
+(no changes)
+
+you › why is my React state not updating when I click the button?
+# No match (conversational) — token-ninja passes through. The model answers normally.
 ```
 
 Check how many tokens you've saved at any time:
