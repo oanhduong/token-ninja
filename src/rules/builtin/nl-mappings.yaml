@@ -1,0 +1,356 @@
+domain: nl-mappings
+rules:
+  # ── testing ──────────────────────────────────────────────────────────
+  - id: nl-run-tests
+    description: "detect test runner from repo and run it"
+    match:
+      type: nl
+      keywords:
+        - ["run", "the", "tests"]
+        - ["run", "tests"]
+        - ["run", "test"]
+        - ["execute", "tests"]
+        - ["run", "unit", "tests"]
+        - ["test", "it"]
+        - ["run", "unit"]
+    action:
+      type: shell-detect
+      detect:
+        - { when: "script:test", command: "npm test" }
+        - { when: "Cargo.toml", command: "cargo test" }
+        - { when: "go.mod", command: "go test ./..." }
+        - { when: "py:poetry", command: "poetry run pytest" }
+        - { when: "py:uv", command: "uv run pytest" }
+        - { when: "pyproject.toml", command: "pytest" }
+        - { when: "pom.xml", command: "mvn test" }
+        - { when: "build.gradle", command: "./gradlew test" }
+        - { when: "build.gradle.kts", command: "./gradlew test" }
+        - { when: "Gemfile", command: "bundle exec rspec" }
+        - { when: "mix.exs", command: "mix test" }
+        - { when: "Makefile", command: "make test" }
+      fallback: null
+    safety: write-confined
+
+  # ── building ─────────────────────────────────────────────────────────
+  - id: nl-build
+    match:
+      type: nl
+      keywords:
+        - ["build", "it"]
+        - ["build", "the", "project"]
+        - ["build", "the", "app"]
+        - ["compile", "it"]
+        - ["make", "a", "build"]
+        - ["build", "for", "production"]
+        - ["compile", "the", "project"]
+    action:
+      type: shell-detect
+      detect:
+        - { when: "script:build", command: "npm run build" }
+        - { when: "Cargo.toml", command: "cargo build --release" }
+        - { when: "go.mod", command: "go build ./..." }
+        - { when: "pom.xml", command: "mvn package" }
+        - { when: "build.gradle", command: "./gradlew build" }
+        - { when: "build.gradle.kts", command: "./gradlew build" }
+        - { when: "Makefile", command: "make build" }
+      fallback: null
+    safety: write-confined
+
+  # ── cleaning ─────────────────────────────────────────────────────────
+  - id: nl-clean
+    match:
+      type: nl
+      keywords:
+        - ["clean", "build"]
+        - ["clean", "the", "project"]
+        - ["clean", "artifacts"]
+    action:
+      type: shell-detect
+      detect:
+        - { when: "Cargo.toml", command: "cargo clean" }
+        - { when: "pom.xml", command: "mvn clean" }
+        - { when: "build.gradle", command: "./gradlew clean" }
+        - { when: "build.gradle.kts", command: "./gradlew clean" }
+        - { when: "Makefile", command: "make clean" }
+        - { when: "go.mod", command: "go clean ./..." }
+      fallback: null
+    safety: write-confined
+
+  # ── dependency install ───────────────────────────────────────────────
+  - id: nl-install-deps
+    match:
+      type: nl
+      keywords:
+        - ["install", "deps"]
+        - ["install", "dependencies"]
+        - ["install", "packages"]
+        - ["install", "the", "packages"]
+        - ["install", "modules"]
+    action:
+      type: shell-detect
+      detect:
+        - { when: "pm:bun", command: "bun install" }
+        - { when: "pm:pnpm", command: "pnpm install" }
+        - { when: "pm:yarn", command: "yarn install" }
+        - { when: "pm:npm", command: "npm install" }
+        - { when: "Cargo.toml", command: "cargo fetch" }
+        - { when: "go.mod", command: "go mod download" }
+        - { when: "py:poetry", command: "poetry install" }
+        - { when: "py:uv", command: "uv sync" }
+        - { when: "py:pipenv", command: "pipenv install" }
+        - { when: "py:pip", command: "pip install -r requirements.txt" }
+        - { when: "pom.xml", command: "mvn dependency:resolve" }
+        - { when: "build.gradle", command: "./gradlew dependencies" }
+        - { when: "Gemfile", command: "bundle install" }
+        - { when: "composer.json", command: "composer install" }
+      fallback: null
+    safety: write-network
+
+  # ── dependency inspection ────────────────────────────────────────────
+  - id: nl-list-deps
+    match:
+      type: nl
+      keywords:
+        - ["list", "dependencies"]
+        - ["show", "dependencies"]
+        - ["what", "packages", "installed"]
+        - ["list", "packages"]
+        - ["show", "packages"]
+    action:
+      type: shell-detect
+      detect:
+        - { when: "pm:bun", command: "bun pm ls" }
+        - { when: "pm:pnpm", command: "pnpm list" }
+        - { when: "pm:yarn", command: "yarn list" }
+        - { when: "pm:npm", command: "npm list --depth=0" }
+        - { when: "Cargo.toml", command: "cargo tree --depth 1" }
+        - { when: "go.mod", command: "go list -m all" }
+        - { when: "py:poetry", command: "poetry show" }
+        - { when: "py:uv", command: "uv pip list" }
+        - { when: "py:pip", command: "pip list" }
+        - { when: "pom.xml", command: "mvn dependency:list" }
+        - { when: "Gemfile", command: "bundle list" }
+        - { when: "composer.json", command: "composer show" }
+      fallback: null
+    safety: read-only
+
+  # ── file listing ─────────────────────────────────────────────────────
+  - id: nl-list-files
+    match:
+      type: nl
+      keywords:
+        - ["show", "me", "the", "files"]
+        - ["list", "files"]
+        - ["list", "the", "files"]
+        - ["list", "files", "here"]
+        - ["what's", "in", "this", "directory"]
+        - ["what", "is", "in", "this", "directory"]
+        - ["what's", "in", "this", "folder"]
+        - ["show", "directory", "contents"]
+        - ["ls", "here"]
+    action: { type: shell, command: "ls --color=auto -la" }
+    safety: read-only
+
+  # ── git status nl ────────────────────────────────────────────────────
+  - id: nl-git-status
+    match:
+      type: nl
+      keywords:
+        - ["what", "changed"]
+        - ["whats", "changed"]
+        - ["what's", "changed"]
+        - ["show", "changes"]
+        - ["what", "did", "i", "change"]
+        - ["any", "uncommitted", "changes"]
+        - ["is", "it", "clean"]
+        - ["git", "status"]
+    action: { type: shell, command: "git status" }
+    safety: read-only
+
+  - id: nl-git-diff
+    match:
+      type: nl
+      keywords:
+        - ["show", "diff"]
+        - ["show", "the", "diff"]
+        - ["show", "me", "the", "diff"]
+        - ["what's", "the", "diff"]
+    action: { type: shell, command: "git diff" }
+    safety: read-only
+
+  - id: nl-git-staged
+    match:
+      type: nl
+      keywords:
+        - ["show", "staged", "changes"]
+        - ["what's", "staged"]
+        - ["staged", "diff"]
+        - ["cached", "diff"]
+    action: { type: shell, command: "git diff --staged" }
+    safety: read-only
+
+  - id: nl-current-branch
+    match:
+      type: nl
+      keywords:
+        - ["what", "branch", "am", "i", "on"]
+        - ["current", "branch"]
+        - ["show", "current", "branch"]
+        - ["which", "branch"]
+    action: { type: shell, command: "git branch --show-current" }
+    safety: read-only
+
+  - id: nl-recent-commits
+    match:
+      type: nl
+      keywords:
+        - ["show", "recent", "commits"]
+        - ["show", "git", "log"]
+        - ["recent", "commits"]
+        - ["last", "commits"]
+        - ["latest", "commits"]
+    action: { type: shell, command: "git log --oneline -n 10" }
+    safety: read-only
+
+  - id: nl-commit-message
+    match:
+      type: regex
+      patterns:
+        - "^commit\\s+with\\s+message\\s+[\"'](.+)[\"']$"
+        - "^commit\\s+message\\s+[\"'](.+)[\"']$"
+        - "^commit\\s+[\"'](.+)[\"']$"
+        - "^create\\s+a\\s+commit\\s+saying\\s+[\"'](.+)[\"']$"
+    action: { type: shell, command: "git commit -m {{arg1}}" }
+    safety: write-confined
+
+  - id: nl-switch-branch
+    match:
+      type: regex
+      patterns:
+        - "^switch\\s+to\\s+(?:branch\\s+)?(\\S+)$"
+        - "^checkout\\s+(?:branch\\s+)?(\\S+)$"
+        - "^go\\s+to\\s+branch\\s+(\\S+)$"
+    action: { type: shell, command: "git checkout {{arg1}}" }
+    safety: write-confined
+
+  - id: nl-blame
+    match:
+      type: regex
+      patterns:
+        - "^who\\s+wrote\\s+(?:this\\s+file\\s+)?(.+)$"
+        - "^blame\\s+(?:file\\s+)?(.+)$"
+    action: { type: shell, command: "git blame {{arg1}}" }
+    safety: read-only
+
+  # ── content / file search ────────────────────────────────────────────
+  - id: nl-find-files
+    match:
+      type: regex
+      patterns:
+        - "^find\\s+files?\\s+named\\s+(\\S+)$"
+        - "^find\\s+(\\S+)\\s+files$"
+        - "^search\\s+for\\s+file\\s+(\\S+)$"
+        - "^locate\\s+(\\S+)$"
+    action: { type: shell, command: "find . -name \"{{arg1}}\"" }
+    safety: read-only
+
+  - id: nl-search-text
+    match:
+      type: regex
+      patterns:
+        - "^search\\s+for\\s+(.+)$"
+        - "^grep\\s+(.+)$"
+        - "^find\\s+text\\s+(.+)$"
+        - "^search\\s+code\\s+for\\s+(.+)$"
+    action: { type: shell, command: "rg {{arg1}}" }
+    safety: read-only
+
+  # ── processes / disk ─────────────────────────────────────────────────
+  - id: nl-processes
+    match:
+      type: nl
+      keywords:
+        - ["what's", "running"]
+        - ["whats", "running"]
+        - ["show", "processes"]
+        - ["list", "processes"]
+        - ["show", "running", "processes"]
+    action: { type: shell, command: "ps aux" }
+    safety: read-only
+
+  - id: nl-disk-usage
+    match:
+      type: nl
+      keywords:
+        - ["how", "much", "space"]
+        - ["disk", "usage"]
+        - ["check", "disk", "space"]
+        - ["free", "space"]
+    action: { type: shell, command: "df -h" }
+    safety: read-only
+
+  # ── dev / start server ───────────────────────────────────────────────
+  - id: nl-run-dev
+    match:
+      type: nl
+      keywords:
+        - ["run", "dev"]
+        - ["start", "dev", "server"]
+        - ["start", "the", "server"]
+        - ["run", "the", "app"]
+        - ["start", "dev"]
+        - ["run", "dev", "server"]
+    action:
+      type: shell-detect
+      detect:
+        - { when: "script:dev", command: "npm run dev" }
+        - { when: "script:start", command: "npm start" }
+        - { when: "Cargo.toml", command: "cargo run" }
+        - { when: "go.mod", command: "go run ." }
+      fallback: null
+    safety: write-confined
+
+  # ── docker nl ────────────────────────────────────────────────────────
+  - id: nl-docker-ps
+    match:
+      type: nl
+      keywords:
+        - ["show", "running", "containers"]
+        - ["list", "containers"]
+        - ["what", "containers", "are", "running"]
+        - ["running", "containers"]
+    action: { type: shell, command: "docker ps" }
+    safety: read-only
+
+  - id: nl-docker-images
+    match:
+      type: nl
+      keywords:
+        - ["show", "docker", "images"]
+        - ["list", "docker", "images"]
+        - ["list", "images"]
+    action: { type: shell, command: "docker images" }
+    safety: read-only
+
+  # ── k8s nl ───────────────────────────────────────────────────────────
+  - id: nl-k8s-pods
+    match:
+      type: nl
+      keywords:
+        - ["show", "pods"]
+        - ["list", "pods"]
+        - ["what", "pods", "are", "running"]
+        - ["running", "pods"]
+    action: { type: shell, command: "kubectl get pods" }
+    safety: write-network
+
+  - id: nl-k8s-services
+    match:
+      type: nl
+      keywords:
+        - ["list", "services"]
+        - ["show", "services"]
+        - ["kubernetes", "services"]
+        - ["k8s", "services"]
+    action: { type: shell, command: "kubectl get svc" }
+    safety: write-network

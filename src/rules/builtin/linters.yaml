@@ -1,0 +1,85 @@
+domain: linters
+rules:
+  - id: eslint
+    match:
+      type: exact
+      patterns: ["eslint .", "eslint src", "eslint --fix .", "eslint --fix src", "eslint --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: eslint-passthrough
+    match:
+      type: prefix
+      patterns: ["eslint --fix", "eslint"]
+    action: { type: shell, command: "eslint", args_passthrough: true }
+    safety: write-confined
+
+  - id: prettier
+    match:
+      type: exact
+      patterns: ["prettier --check .", "prettier --write .", "prettier --check src", "prettier --write src", "prettier --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: prettier-passthrough
+    match:
+      type: prefix
+      patterns: ["prettier --check", "prettier --write", "prettier -c", "prettier -w", "prettier"]
+    action: { type: shell, command: "prettier", args_passthrough: true }
+    safety: write-confined
+
+  - id: stylelint
+    match:
+      type: prefix
+      patterns: ["stylelint"]
+    action: { type: shell, command: "stylelint", args_passthrough: true }
+    safety: write-confined
+
+  - id: tslint
+    match:
+      type: prefix
+      patterns: ["tslint"]
+    action: { type: shell, command: "tslint", args_passthrough: true }
+    safety: read-only
+
+  - id: rubocop
+    match:
+      type: exact
+      patterns: ["rubocop", "rubocop -A", "rubocop -a", "rubocop --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: rubocop-passthrough
+    match:
+      type: prefix
+      patterns: ["rubocop"]
+    action: { type: shell, command: "rubocop", args_passthrough: true }
+    safety: write-confined
+
+  - id: shellcheck
+    match:
+      type: prefix
+      patterns: ["shellcheck"]
+    action: { type: shell, command: "shellcheck", args_passthrough: true }
+    safety: read-only
+
+  - id: hadolint
+    match:
+      type: prefix
+      patterns: ["hadolint"]
+    action: { type: shell, command: "hadolint", args_passthrough: true }
+    safety: read-only
+
+  - id: yamllint
+    match:
+      type: prefix
+      patterns: ["yamllint"]
+    action: { type: shell, command: "yamllint", args_passthrough: true }
+    safety: read-only
+
+  - id: markdownlint
+    match:
+      type: prefix
+      patterns: ["markdownlint"]
+    action: { type: shell, command: "markdownlint", args_passthrough: true }
+    safety: write-confined

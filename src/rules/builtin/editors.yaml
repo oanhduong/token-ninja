@@ -1,0 +1,21 @@
+domain: editors
+rules:
+  - id: code-open
+    match:
+      type: regex
+      patterns:
+        - "^code\\s+\\.$"
+        - "^code\\s+([\\w./\\-]+)$"
+        - "^code\\s+-r\\s+([\\w./\\-]+)$"
+    action: { type: shell, command: "code {{input}}" }
+    safety: write-confined
+
+  - id: vim-open
+    match:
+      type: regex
+      patterns:
+        - "^(vim|nvim|nano|subl|idea|webstorm|code-insiders|cursor)\\s+([\\w./\\-]+)$"
+    action:
+      type: passthrough
+      reason: "interactive editor — let the AI tool open it or the user runs it themselves"
+    safety: read-only

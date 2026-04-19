@@ -1,0 +1,71 @@
+domain: test-runners
+rules:
+  - id: jest
+    match:
+      type: exact
+      patterns: ["jest", "jest --coverage", "jest --watchAll=false", "jest --ci", "jest --runInBand"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: jest-passthrough
+    match:
+      type: prefix
+      patterns: ["jest"]
+    action: { type: shell, command: "jest", args_passthrough: true }
+    safety: write-confined
+
+  - id: vitest
+    match:
+      type: exact
+      patterns: ["vitest", "vitest run", "vitest --coverage", "vitest run --coverage"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: vitest-passthrough
+    match:
+      type: prefix
+      patterns: ["vitest run", "vitest"]
+    action: { type: shell, command: "vitest", args_passthrough: true }
+    safety: write-confined
+
+  - id: mocha
+    match:
+      type: prefix
+      patterns: ["mocha"]
+    action: { type: shell, command: "mocha", args_passthrough: true }
+    safety: write-confined
+
+  - id: cypress
+    match:
+      type: exact
+      patterns: ["cypress run", "cypress open", "cypress --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: cypress-passthrough
+    match:
+      type: prefix
+      patterns: ["cypress"]
+    action: { type: shell, command: "cypress", args_passthrough: true }
+    safety: write-confined
+
+  - id: playwright
+    match:
+      type: exact
+      patterns: ["playwright test", "playwright test --ui", "playwright test --headed", "playwright --version", "npx playwright test", "npx playwright install"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: playwright-passthrough
+    match:
+      type: prefix
+      patterns: ["playwright test", "playwright install"]
+    action: { type: shell, command: "playwright", args_passthrough: true }
+    safety: write-confined
+
+  - id: karma
+    match:
+      type: exact
+      patterns: ["karma start", "karma start --single-run", "karma init"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined

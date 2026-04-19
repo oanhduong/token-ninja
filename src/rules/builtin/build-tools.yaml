@@ -1,0 +1,95 @@
+domain: build-tools
+rules:
+  - id: make
+    match:
+      type: exact
+      patterns:
+        - "make"
+        - "make clean"
+        - "make all"
+        - "make test"
+        - "make build"
+        - "make check"
+        - "make dist"
+        - "make -j"
+        - "make -j4"
+        - "make -j8"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: make-passthrough
+    match:
+      type: prefix
+      patterns: ["make"]
+    action: { type: shell, command: "make", args_passthrough: true }
+    safety: write-confined
+
+  - id: cmake
+    match:
+      type: exact
+      patterns: ["cmake .", "cmake --build .", "cmake --build build", "cmake -B build", "cmake --version", "cmake -S . -B build"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: cmake-passthrough
+    match:
+      type: prefix
+      patterns: ["cmake --build", "cmake --install", "cmake -B", "cmake -S", "cmake"]
+    action: { type: shell, command: "cmake", args_passthrough: true }
+    safety: write-confined
+
+  - id: ninja-build
+    match:
+      type: exact
+      patterns: ["ninja", "ninja -t clean"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: ninja-passthrough
+    match:
+      type: prefix
+      patterns: ["ninja -t", "ninja -j"]
+    action: { type: shell, command: "ninja", args_passthrough: true }
+    safety: write-confined
+
+  - id: bazel
+    match:
+      type: exact
+      patterns: ["bazel build //...", "bazel test //...", "bazel run", "bazel clean", "bazel info", "bazel version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: bazel-passthrough
+    match:
+      type: prefix
+      patterns: ["bazel build", "bazel test", "bazel run", "bazel clean", "bazel query", "bazel info"]
+    action: { type: shell, command: "bazel", args_passthrough: true }
+    safety: write-network
+
+  - id: sbt
+    match:
+      type: exact
+      patterns: ["sbt compile", "sbt test", "sbt run", "sbt clean", "sbt package", "sbt about"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: sbt-passthrough
+    match:
+      type: prefix
+      patterns: ["sbt"]
+    action: { type: shell, command: "sbt", args_passthrough: true }
+    safety: write-network
+
+  - id: lein
+    match:
+      type: exact
+      patterns: ["lein deps", "lein test", "lein run", "lein compile", "lein clean", "lein version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: lein-passthrough
+    match:
+      type: prefix
+      patterns: ["lein"]
+    action: { type: shell, command: "lein", args_passthrough: true }
+    safety: write-network

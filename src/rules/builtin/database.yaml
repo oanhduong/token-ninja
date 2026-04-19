@@ -1,0 +1,92 @@
+domain: database
+rules:
+  - id: psql-version
+    match:
+      type: exact
+      patterns: ["psql --version", "psql -V", "pg_dump --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: psql-version-passthrough
+    match:
+      type: regex
+      patterns: ["^(psql|pg_dump)\\s+(--version|-V)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: psql-select
+    match:
+      type: regex
+      patterns:
+        - "^psql\\s+-c\\s+\"(SELECT\\s+.+)\"$"
+        - "^psql\\s+-c\\s+'(SELECT\\s+.+)'$"
+    action: { type: shell, command: "psql -c \"{{arg1}}\"" }
+    safety: write-network
+
+  - id: mysql-version
+    match:
+      type: exact
+      patterns: ["mysql --version", "mysql -V", "mysqldump --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: mysql-version-passthrough
+    match:
+      type: regex
+      patterns: ["^(mysql|mysqldump)\\s+(--version|-V)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: mysql-select
+    match:
+      type: regex
+      patterns:
+        - "^mysql\\s+-e\\s+\"(SELECT\\s+.+)\"$"
+        - "^mysql\\s+-e\\s+'(SELECT\\s+.+)'$"
+    action: { type: shell, command: "mysql -e \"{{arg1}}\"" }
+    safety: write-network
+
+  - id: redis-cli
+    match:
+      type: exact
+      patterns: ["redis-cli ping", "redis-cli info", "redis-cli info server", "redis-cli info memory", "redis-cli dbsize", "redis-cli config get maxmemory"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: redis-cli-get
+    match:
+      type: regex
+      patterns:
+        - "^redis-cli\\s+get\\s+(\\S+)$"
+        - "^redis-cli\\s+keys\\s+(\\S+)$"
+        - "^redis-cli\\s+exists\\s+(\\S+)$"
+        - "^redis-cli\\s+ttl\\s+(\\S+)$"
+        - "^redis-cli\\s+type\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  - id: mongosh-version
+    match:
+      type: exact
+      patterns: ["mongosh --version", "mongosh --help", "mongo --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: mongosh-version-passthrough
+    match:
+      type: regex
+      patterns: ["^(mongosh|mongo)\\s+(--version|--help)$"]
+    action: { type: shell, command: "{{arg1}} {{arg2}}" }
+    safety: read-only
+
+  - id: sqlite3-tables
+    match:
+      type: regex
+      patterns:
+        - "^sqlite3\\s+(\\S+)\\s+\"\\.tables\"$"
+        - "^sqlite3\\s+(\\S+)\\s+'\\.tables'$"
+        - "^sqlite3\\s+(\\S+)\\s+\"\\.schema\"$"
+        - "^sqlite3\\s+(\\S+)\\s+'\\.schema'$"
+        - "^sqlite3\\s+(\\S+)\\s+\"\\.dbinfo\"$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
