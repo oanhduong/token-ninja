@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name("ninja")
   .description("Save tokens on commands that don't need AI. Run deterministic commands locally, pass complex ones to your AI tool.")
-  .version("0.1.0")
+  .version("0.1.0") // x-release-please-version
   .option("-v, --verbose", "verbose output", false)
   .option("--dry-run", "show what would run without executing", false)
   .option("--ai <tool>", "override AI tool fallback (claude|codex|cursor|aider|gemini|continue)")
