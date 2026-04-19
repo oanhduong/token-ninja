@@ -26,29 +26,28 @@ unchanged, uninterrupted.
 ---
 
 ```console
-# One-shot invocations (shell wrapper). Type these at your OS terminal:
-you@host:~/app$ claude -p "git status"
-On branch main
-nothing to commit, working tree clean
-ninja saved ~512 tokens (git-status)
+# Inside your Claude Code (or Cursor / Claude Desktop) session — just chat as usual.
+# token-ninja watches every shell call the agent tries to make and handles the
+# deterministic ones locally, without ever hitting the model.
 
-you@host:~/app$ claude -p "what's using port 3000"
-COMMAND  PID  USER   FD   TYPE  DEVICE  SIZE/OFF NODE NAME
-node    4812  alice  21u  IPv6  154321       0t0 TCP  *:3000 (LISTEN)
-ninja saved ~438 tokens (port-usage)
+you  › what branch am I on?
+ai   › (asks token-ninja) git branch --show-current
+     ⚡ ninja handled locally (git-branch-current) · saved ~420 tokens
+     main
 
-you@host:~/app$ claude -p "explain this stack trace: …"
-# not a deterministic command — passes straight through to real claude
+you  › how's the test suite doing?
+ai   › (asks token-ninja) npm test
+     ⚡ ninja handled locally (npm-test) · saved ~480 tokens
+     Tests  234 passed (234)
+
+you  › explain this stack trace: …
+ai   › (token-ninja: no match — passing through to the model)
+     …regular model reply…
 ```
 
-For interactive sessions (`claude`, `cursor-agent`, etc. without args), register
-token-ninja as an **MCP server** instead — see [MCP integration](#mcp-integration).
-The agent then consults the router before every shell call, inside the same
-REPL you already use.
-
-No prefix. No mental overhead. Keep calling `claude`, `codex`, `cursor`, `aider`,
-`gemini`, `continue` — token-ninja quietly handles the boring stuff and gets out
-of the way for everything else.
+No prefix. No new commands to learn. Keep chatting with `claude`, `codex`,
+`cursor`, `aider`, `gemini`, `continue` the way you already do — token-ninja
+quietly handles the boring stuff and gets out of the way for everything else.
 
 ---
 
@@ -90,73 +89,73 @@ don't need a model. They need a shell.
 | `rm -rf /`                         | runs if model agrees | **blocked before exec**  |
 | `explain this stack trace: …`      | ~2–5 k tokens      | passes straight through    |
 
-The classifier runs in **~37 µs**. The safety validator runs in **~4 µs**. Neither
-will ever be the slow part of your day.
+The classifier runs in **~19 µs**. The safety validator runs in **~10 µs**.
+Neither will ever be the slow part of your day.
 
 ## Install
+
+**One line. Zero config. Starts working on your next AI session.**
 
 ```bash
 npm install -g token-ninja
 ```
 
-That's it. A postinstall hook runs `ninja setup`, which:
+A postinstall hook registers `ninja mcp` as an MCP server in every AI client
+it can find on your machine — Claude Code (`~/.claude.json`), Cursor
+(`~/.cursor/mcp.json`), and Claude Desktop — so the next time you open your
+AI tool, it already knows to consult token-ninja before spending tokens on
+commands like `git status`, `npm test`, or `docker ps`.
 
-1. detects your shell (`bash` / `zsh` / `fish`),
-2. detects any of `claude`, `codex`, `cursor-agent`, `aider`, `gemini`,
-   `continue` on your `PATH`,
-3. appends a small managed block to your rc file so one-shot calls to those
-   tools route through `ninja` first,
-4. **registers `ninja mcp` as an MCP server** in Claude Code
-   (`~/.claude.json`), Cursor (`~/.cursor/mcp.json`), and Claude Desktop, so
-   **interactive** agent sessions also benefit without any manual config,
-5. backs up every file it touches once (`*.token-ninja.bak`) before the first
-   write, and skips targets where the config is malformed,
-6. writes a default config to `~/.config/token-ninja/config.yaml`.
-
-**Open a new terminal and keep using your AI tool as before.** Matched commands
-run locally and print a one-line hint like `ninja saved ~512 tokens (git-status)`.
-Everything else falls through to the AI, unchanged.
+Existing MCP entries are preserved, each file is backed up once
+(`*.token-ninja.bak`) before the first write, and malformed configs are
+skipped safely instead of failing the install.
 
 > **Requirements:** Node ≥ 20.
 >
-> **Opt out of the postinstall hook:**
+> **Opt out of the postinstall hook entirely:**
 > `TOKEN_NINJA_SKIP_POSTINSTALL=1 npm install -g token-ninja`
 >
-> **Opt out of MCP auto-registration only** (keep the shell shim):
-> `ninja setup --no-mcp`
->
-> **Roll back any time:** `ninja uninstall` — strips the managed block and
-> removes the MCP entry from each client config it wrote to.
+> **Roll back any time:** `ninja uninstall` — removes the MCP entry from
+> every client config it wrote to.
 
 ## Quickstart
 
+**There's no new command to learn.** After `npm install -g token-ninja`,
+open your AI tool the way you always do and start chatting:
+
+```console
+you  › are there any uncommitted changes?
+ai   ⚡ handled by token-ninja (git-status) · saved ~512 tokens
+     On branch main
+     nothing to commit, working tree clean
+
+you  › list the recent commits on this branch
+ai   ⚡ handled by token-ninja (git-log-recent) · saved ~500 tokens
+     9e1c3b4  feat(setup): auto-register ninja mcp
+     48f6643  feat(rules): expand coverage with 10 new domains
+     …
+
+you  › what's using port 3000?
+ai   ⚡ handled by token-ninja (port-usage) · saved ~438 tokens
+     node    4812  alice   21u  IPv6  *:3000 (LISTEN)
+
+you  › why is my React state not updating when I click the button?
+ai   # No match — token-ninja passes through. The model answers normally.
+```
+
+Check how many tokens you've saved at any time:
+
 ```bash
-# One-shot mode — type these at your OS terminal (bash/zsh/fish), not inside
-# Claude Code's REPL. token-ninja's shell shim wraps the `claude` binary on
-# your PATH, inspects the argument, and runs matched commands locally:
-claude -p "git status"             # 0 tokens
-claude -p "build the project"      # 0 tokens (reads package.json / Cargo.toml / …)
-claude -p "what branch am I on"    # 0 tokens (natural language → git branch --show-current)
-claude -p "rm -rf /"               # blocked — falls back to real claude for human review
-claude -p "explain this error: …"  # no match — passes straight through
-
-# Or invoke ninja directly — same router:
-ninja "show recent commits"
-
-# See the damage report
 ninja stats
 ```
 
-> **Interactive Claude Code sessions** (running `claude` with no args and typing
-> commands at the REPL) bypass the shell shim by design — once the REPL owns
-> your terminal, the shim can't see what you type. `ninja setup` handles that
-> for you automatically by registering `ninja mcp` as an MCP server in
-> `~/.claude.json`, `~/.cursor/mcp.json`, and Claude Desktop's config.
-> Open a fresh REPL after install and it's already wired up. See
-> [MCP integration](#mcp-integration) for the details.
+Handy extras:
 
-Re-run auto-setup any time: `ninja setup` · Preview without writing:
-`ninja setup --dry-run` · Scope to specific tools: `ninja setup --tool claude`.
+- `ninja rules test "your command"` — dry-run the classifier against any
+  input (no execution) and see which rule would fire.
+- `ninja setup` — re-run auto-setup; `ninja setup --dry-run` previews without
+  writing; `ninja setup --no-mcp` skips MCP registration.
+- `ninja uninstall` — remove everything token-ninja added.
 
 ## How it works
 
@@ -207,36 +206,37 @@ dangerous command past the classifier.
   (direnv, asdf, mise, pyenv, rbenv, nix, conda)**, **distributed systems
   (consul, etcd, zookeeper, NATS, Kafka, RabbitMQ)**, and natural-language
   mappings. Run `ninja rules list` to see everything loaded.
-- **Fast**: ~37 µs per classification, ~4 µs per safety check (warm JIT).
+- **Fast**: ~19 µs per classification, ~10 µs per safety check (warm JIT).
 - **Safe by construction**: layered deny-list blocks `rm -rf /`, `sudo`,
   `git push --force`, `DROP TABLE`, `curl | sh`, `dd if=`, `mkfs`, … including
   homoglyph, NFKC, chained, and base64-decoded evasion.
 - **Zero-setup**: `npm install -g` is literally the whole install. A
-  postinstall hook wires up your shell; `ninja uninstall` reverses it.
-- **Transparent UX**: keep calling `claude`, `codex`, etc. The only thing you
-  notice is a green one-liner: `ninja saved ~512 tokens (git-status)`.
+  postinstall hook registers token-ninja as an MCP server in every AI client
+  it can detect; `ninja uninstall` reverses it.
+- **Transparent UX**: nothing changes about how you use your AI tool. The
+  only thing you notice is a small "⚡ handled by token-ninja" line when a
+  deterministic command gets answered for free.
+- **MCP-native**: exposes `maybe_execute_locally` over stdio so AI agents
+  consult the router *before* generating tokens.
 - **Pluggable**: drop a `.yaml` into `~/.config/token-ninja/rules/` to add
   your own patterns. User rules override builtins by id.
-- **MCP-native**: exposes `maybe_execute_locally` over stdio so AI agents can
-  consult the router *before* generating tokens.
 - **Telemetry built in**: `ninja stats` shows hit rate, top rules, and an
   estimate of the tokens you've saved to date.
-- **Dry-run friendly**: `ninja --dry-run "…"` prints what would run;
-  `ninja rules test "…"` shows which rule would fire.
+- **Dry-run friendly**: `ninja rules test "…"` shows which rule would fire
+  for any input, without executing anything.
 
 ## Supported AI tools
 
-| Tool            | Adapter id  | Binary detected on PATH |
-| --------------- | ----------- | ----------------------- |
-| Claude Code     | `claude`    | `claude`                |
-| OpenAI Codex    | `codex`     | `codex`                 |
-| Cursor          | `cursor`    | `cursor-agent`          |
-| Aider           | `aider`     | `aider`                 |
-| Gemini CLI      | `gemini`    | `gemini`                |
-| Continue        | `continue`  | `continue`              |
-| *Anything else* | `generic`   | via `fallback_command`  |
+Auto-registered by `ninja setup` out of the box:
 
-Installing a new AI tool later? Just run `ninja setup` — it's idempotent.
+| Tool            | Config file token-ninja writes to                                      |
+| --------------- | ---------------------------------------------------------------------- |
+| Claude Code     | `~/.claude.json`                                                       |
+| Cursor          | `~/.cursor/mcp.json`                                                   |
+| Claude Desktop  | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS), `%APPDATA%\Claude\…` (Windows), `$XDG_CONFIG_HOME/Claude/…` (Linux) |
+
+Any other MCP-capable client works too — point it at `ninja mcp` and you're
+in. Installed a new AI tool later? Re-run `ninja setup`; it's idempotent.
 
 ## Write your own rules
 
@@ -316,10 +316,10 @@ Use `ninja rules test "your command"` to dry-run the classifier against any inpu
 
 ## MCP integration
 
-Interactive agents (Claude Code REPL, Cursor, Claude Desktop, Continue, …)
-don't go through the shell shim — they call shell commands *from inside* the
-agent. Registering `token-ninja` as an MCP server lets the agent consult the
-router on every command **before** it burns tokens.
+token-ninja talks to your AI tool through the Model Context Protocol: it
+exposes a single stdio tool (`maybe_execute_locally`) that the agent calls
+on every command it's about to run. If token-ninja recognizes the command,
+it answers with the output directly; if not, the agent proceeds as usual.
 
 **You don't need to configure this manually.** `ninja setup` (the postinstall
 hook) merges an entry like the one below into:
@@ -364,25 +364,26 @@ Each call the model makes looks like:
 
 ## Configuration
 
-`~/.config/token-ninja/config.yaml`:
+You don't need to touch this to get started — the defaults work out of the
+box. If you want to tune things:
+
+`~/.config/token-ninja/config.yaml`
 
 ```yaml
-default_ai_tool: claude                     # fallback AI CLI
-fallback_command: "{{tool}} {{input}}"      # how we invoke it
-custom_rules_dir: ~/.config/token-ninja/rules
+custom_rules_dir: ~/.config/token-ninja/rules  # where your own rules live
 stats:
   enabled: true
-  show_savings_on_exit: true                # the green "ninja saved ~N tokens" line
+  show_savings_on_exit: true                   # "⚡ handled by token-ninja" line
   verbose: false
 ```
 
 Environment variables:
 
-| Variable                          | Effect                                                 |
-| --------------------------------- | ------------------------------------------------------ |
-| `TOKEN_NINJA_SKIP_POSTINSTALL=1`  | Skip the automatic rc-file install on `npm i -g`.      |
-| `TOKEN_NINJA_RC_FILE=<path>`      | Override the rc file path (testing, esoteric shells).  |
-| `XDG_CONFIG_HOME`                 | Honored for both config dir and fish config location.  |
+| Variable                          | Effect                                                       |
+| --------------------------------- | ------------------------------------------------------------ |
+| `TOKEN_NINJA_SKIP_POSTINSTALL=1`  | Skip the automatic setup on `npm i -g`.                      |
+| `CLAUDE_CONFIG_PATH=<path>`       | Override the Claude Code config path used by `ninja setup`.  |
+| `XDG_CONFIG_HOME`                 | Honored for the token-ninja config dir and Claude Desktop on Linux. |
 
 ## Safety model
 
@@ -408,26 +409,19 @@ human can review the explanation before anything runs.
 
 ## Commands
 
-```
-ninja <input…>                route a command (the default)
-ninja setup [--dry-run] [--shell …] [--tool …]
-                              auto-install shim into your rc file
-ninja uninstall               remove the managed block from your rc file
-ninja init                    alias for `setup` (kept for compatibility)
-ninja mcp                     start MCP stdio server (maybe_execute_locally)
-ninja stats [--json] [--reset]
-                              cumulative savings
-ninja shim <tool> [--shell …]
-                              print a shell function that wraps one AI tool
-ninja rules list [--domain …] [--json]
-ninja rules test <input…>     dry-run the classifier
+You almost never need these — setup is automatic. Kept for diagnostics and
+power users.
 
-Global options:
-  -v, --verbose               verbose stderr logging
-  --dry-run                   print the resolved command, don't execute
-  --ai <tool>                 override fallback tool
-  --no-fallback               fail non-zero on a miss instead of calling AI
-  --json                      machine-readable output
+```
+ninja setup [--dry-run] [--no-mcp] [--tool …]
+                              auto-register token-ninja with every AI client
+                              it can detect (the postinstall default)
+ninja uninstall               undo setup; remove MCP entries from client configs
+ninja mcp                     run the stdio MCP server (what the AI tool calls)
+ninja stats [--json] [--reset]
+                              see tokens saved, top rules, hit rate
+ninja rules list [--domain …] [--json]
+ninja rules test <input…>     dry-run the classifier against an input
 ```
 
 ## Benchmarks
@@ -437,15 +431,15 @@ non-negotiable. The test suite is the safety net.
 
 | Metric                          | Value                              |
 | ------------------------------- | ---------------------------------- |
-| Test files                      | **16**                             |
-| Tests                           | **218** (all passing)              |
-| Line coverage                   | **91.2%** &nbsp;(threshold: 85%)   |
-| Branch coverage                 | **83.2%** &nbsp;(threshold: 80%)   |
+| Test files                      | **17**                             |
+| Tests                           | **234** (all passing)              |
+| Line coverage                   | **92.2%** &nbsp;(threshold: 85%)   |
+| Branch coverage                 | **84.3%** &nbsp;(threshold: 80%)   |
 | Function coverage               | **95.2%** &nbsp;(threshold: 95%)   |
-| Statement coverage              | **91.2%** &nbsp;(threshold: 85%)   |
-| Real-command fixture hit-rate   | **≥ 85%** enforced                 |
-| `classify()` benchmark          | **~37 µs/call** (10 k in < 800 ms) |
-| `validate()` benchmark          | **~4 µs/call**  (10 k in < 100 ms) |
+| Statement coverage              | **92.2%** &nbsp;(threshold: 85%)   |
+| Real-command fixture hit-rate   | **100%** on 657 commands (floor: 85%) |
+| `classify()` benchmark          | **~19 µs/call** (10 k in < 800 ms) |
+| `validate()` benchmark          | **~10 µs/call**  (10 k in < 100 ms) |
 
 Coverage is enforced by `vitest` + `@vitest/coverage-v8` against
 `src/router/**`, `src/safety/**`, and `src/rules/**`.
@@ -492,33 +486,35 @@ npx tsx src/cli.ts rules list --domain git
 
 ## FAQ
 
-**Does it modify my `.zshrc` without asking?**
-The postinstall hook runs `ninja setup` after a **global** install
-(`npm install -g`). It writes a single well-marked block (`# >>> token-ninja >>>`
-… `# <<< token-ninja <<<`) and backs up the original once. Run
-`ninja uninstall` to remove it, or set `TOKEN_NINJA_SKIP_POSTINSTALL=1` at
-install time to skip the hook entirely.
+**What does the postinstall hook actually change on my machine?**
+It merges a single `token-ninja` entry into each AI client's MCP config
+file — `~/.claude.json`, `~/.cursor/mcp.json`, and Claude Desktop's
+OS-specific config. Nothing else is touched. Every file it writes is backed
+up once (`*.token-ninja.bak`) before the first modification, and every
+unrelated key is preserved. Run `ninja uninstall` to remove it, or set
+`TOKEN_NINJA_SKIP_POSTINSTALL=1` at install time to skip the hook entirely.
+
+**Does it work if I don't use Claude Code / Cursor / Claude Desktop?**
+Yes — any MCP-capable client works. Point its server config at
+`ninja mcp`. Non-MCP tools can still use token-ninja as a library or via
+the `maybe_execute_locally` stdio protocol directly.
 
 **What happens if a rule misclassifies my command?**
 Nothing dangerous: safety is checked twice, and any resolved command that
-doesn't match its declared safety tier is blocked and falls back to the AI.
-If the match itself is wrong (e.g. prints the wrong thing), disable that rule
-by shadowing its id in a file under `~/.config/token-ninja/rules/`.
+doesn't match its declared safety tier is blocked — the agent is told
+"handle this yourself" and takes over as if token-ninja weren't there.
+If the match itself is wrong (e.g. prints the wrong thing), disable that
+rule by shadowing its id in a file under `~/.config/token-ninja/rules/`.
 
 **How is "tokens saved" calculated?**
-Each rule carries a `tokens_saved_estimate`, or we estimate from input length +
-captured output + a 400-token system-prompt overhead. See
+Each rule carries a `tokens_saved_estimate`, or we estimate from input
+length + captured output + a 400-token system-prompt overhead. See
 [`src/telemetry/stats.ts`](src/telemetry/stats.ts).
 
-**Can I use token-ninja without letting it modify my shell?**
-Yes. `TOKEN_NINJA_SKIP_POSTINSTALL=1 npm i -g token-ninja` installs only the
-`ninja` binary. Invoke it directly (`ninja "git status"`), or use it through
-MCP (`ninja mcp`).
-
 **Does it work on Windows?**
-The router and MCP server run anywhere Node 20+ runs. Shell shim generation
-targets `bash` / `zsh` / `fish`; PowerShell support is on the roadmap. In the
-meantime, Windows users can invoke `ninja` directly or use the MCP server.
+Yes. The router and MCP server run anywhere Node 20+ runs; the auto-setup
+handles the Windows Claude Desktop config path (`%APPDATA%\Claude\…`) out
+of the box.
 
 ## Contributing
 
