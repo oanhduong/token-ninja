@@ -4,14 +4,14 @@ rules:
     match:
       type: exact
       patterns: ["ls", "ls -l", "ls -la", "ls -lah", "ls -lh", "ls -lS", "ls -lt", "ls -ltr", "ls -R", "ls -1", "ls -A", "ls -a", "ls --color"]
-    action: { type: shell, command: "ls --color=auto" }
+    action: { type: shell, command: "ls --color=always" }
     safety: read-only
 
   - id: ls-with-path
     match:
       type: prefix
       patterns: ["ls -la", "ls -l", "ls -lh", "ls -a", "ls -A", "ls -R", "ls"]
-    action: { type: shell, command: "ls --color=auto {{input}}" }
+    action: { type: shell, command: "ls --color=always {{input}}" }
     safety: read-only
 
   - id: pwd

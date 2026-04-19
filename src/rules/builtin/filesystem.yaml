@@ -18,7 +18,7 @@ rules:
     match:
       type: prefix
       patterns: ["bat --plain", "bat -p", "bat"]
-    action: { type: shell, command: "bat", args_passthrough: true }
+    action: { type: shell, command: "bat --color=always", args_passthrough: true }
     safety: read-only
 
   - id: head
@@ -97,7 +97,7 @@ rules:
     match:
       type: prefix
       patterns: ["diff -u", "diff -r", "diff -q", "diff -y", "diff -N", "diff -Naur", "diff"]
-    action: { type: shell, command: "diff", args_passthrough: true }
+    action: { type: shell, command: "diff --color=always", args_passthrough: true }
     safety: read-only
 
   - id: cmp
@@ -167,7 +167,7 @@ rules:
     match:
       type: prefix
       patterns: ["tree -L", "tree -a", "tree -d", "tree -I", "tree"]
-    action: { type: shell, command: "tree", args_passthrough: true }
+    action: { type: shell, command: "tree -C", args_passthrough: true }
     safety: read-only
 
   - id: ncdu

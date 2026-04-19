@@ -22,7 +22,7 @@ rules:
         - "grep -B"
         - "grep -C"
         - "grep"
-    action: { type: shell, command: "grep", args_passthrough: true }
+    action: { type: shell, command: "grep --color=always", args_passthrough: true }
     safety: read-only
 
   - id: egrep
@@ -58,7 +58,7 @@ rules:
         - "rg --glob"
         - "rg -g"
         - "rg"
-    action: { type: shell, command: "rg", args_passthrough: true }
+    action: { type: shell, command: "rg --color=always", args_passthrough: true }
     safety: read-only
 
   - id: sed-print
@@ -165,7 +165,7 @@ rules:
     match:
       type: prefix
       patterns: ["jq -r", "jq -c", "jq -s", "jq"]
-    action: { type: shell, command: "jq", args_passthrough: true }
+    action: { type: shell, command: "jq -C", args_passthrough: true }
     safety: read-only
 
   - id: yq

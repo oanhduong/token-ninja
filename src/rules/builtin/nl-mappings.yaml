@@ -148,7 +148,7 @@ rules:
         - ["what's", "in", "this", "folder"]
         - ["show", "directory", "contents"]
         - ["ls", "here"]
-    action: { type: shell, command: "ls --color=auto -la" }
+    action: { type: shell, command: "ls --color=always -la" }
     safety: read-only
 
   # ── git status nl ────────────────────────────────────────────────────
@@ -262,7 +262,7 @@ rules:
         - "^grep\\s+(.+)$"
         - "^find\\s+text\\s+(.+)$"
         - "^search\\s+code\\s+for\\s+(.+)$"
-    action: { type: shell, command: "rg {{arg1}}" }
+    action: { type: shell, command: "rg --color=always {{arg1}}" }
     safety: read-only
 
   # ── processes / disk ─────────────────────────────────────────────────

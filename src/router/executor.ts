@@ -19,9 +19,38 @@ export interface ExecResult {
  */
 export async function execShell(
   command: string,
-  opts: { cwd?: string; captureOnly?: boolean; env?: NodeJS.ProcessEnv } = {}
+  opts: {
+    cwd?: string;
+    captureOnly?: boolean;
+    env?: NodeJS.ProcessEnv;
+    /**
+     * Force CLI tools to emit ANSI color escapes even though stdout is a
+     * pipe (execa uses `stdio: "pipe"` to capture). Used by the Claude Code
+     * UserPromptSubmit hook so `git status`, `ls`, etc. render colorized
+     * inside the block-reason. Not set for MCP — the model gets plain text
+     * to avoid wasting tokens on escape sequences.
+     */
+    forceColor?: boolean;
+  } = {}
 ): Promise<ExecResult> {
   const start = Date.now();
+  const colorEnv: NodeJS.ProcessEnv = opts.forceColor
+    ? {
+        // Node-based CLIs (chalk/kleur/picocolors) and most JS test runners.
+        FORCE_COLOR: "1",
+        // BSD userland (macOS `ls`, some others).
+        CLICOLOR: "1",
+        CLICOLOR_FORCE: "1",
+        // Git: override the piped-stdout auto-disable.
+        GIT_CONFIG_PARAMETERS: "'color.ui=always'",
+        // Cargo, rustc wrappers.
+        CARGO_TERM_COLOR: "always",
+        // Python — colorama / rich / pytest-color.
+        PY_COLORS: "1",
+        // Explicitly clear NO_COLOR in case the parent set it.
+        NO_COLOR: "",
+      }
+    : {};
   try {
     const child = execa(command, {
       shell: true,
@@ -29,7 +58,7 @@ export async function execShell(
       reject: false,
       all: false,
       stripFinalNewline: false,
-      env: { ...process.env, ...(opts.env ?? {}) },
+      env: { ...process.env, ...colorEnv, ...(opts.env ?? {}) },
       stdio: opts.captureOnly ? ["ignore", "pipe", "pipe"] : ["inherit", "pipe", "pipe"],
     });
 

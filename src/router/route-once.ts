@@ -18,6 +18,13 @@ export interface RouteOnceOpts {
    * accidentally short-circuit the model.
    */
   strict?: boolean;
+  /**
+   * Force ANSI color output from the executed command. Used by the
+   * UserPromptSubmit hook so git/ls/etc. render in their usual colors
+   * inside Claude Code's (yellow) block-reason. MCP callers leave this
+   * off to avoid embedding escape codes in tokens sent to the model.
+   */
+  forceColor?: boolean;
 }
 
 export type RouteOnceResult =
@@ -82,7 +89,11 @@ export async function routeOnce(
     };
   }
 
-  const result = await execShell(match.command, { cwd, captureOnly: true });
+  const result = await execShell(match.command, {
+    cwd,
+    captureOnly: true,
+    forceColor: opts.forceColor === true,
+  });
   const tokens = estimateTokensSaved(command, result, match.rule);
   await recordHit(match.rule, command, result);
 

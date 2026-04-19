@@ -53,12 +53,25 @@ program
     "--strict",
     "reject nl + regex matches (only exact/prefix count as handled); use from hooks to avoid intercepting conversational prompts"
   )
-  .action(async (input: string[], opts: { cwd?: string; strict?: boolean }) => {
-    const command = input.join(" ").trim();
-    const result = await routeOnce(command, { cwd: opts.cwd, strict: opts.strict === true });
-    process.stdout.write(JSON.stringify(result) + "\n");
-    process.exit(0);
-  });
+  .option(
+    "--no-color",
+    "disable forced ANSI colors in the executed command's output (default: on, so git/ls/etc. render colorized inside the Claude Code hook block)"
+  )
+  .action(
+    async (
+      input: string[],
+      opts: { cwd?: string; strict?: boolean; color?: boolean }
+    ) => {
+      const command = input.join(" ").trim();
+      const result = await routeOnce(command, {
+        cwd: opts.cwd,
+        strict: opts.strict === true,
+        forceColor: opts.color !== false,
+      });
+      process.stdout.write(JSON.stringify(result) + "\n");
+      process.exit(0);
+    }
+  );
 
 program
   .command("setup")
