@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
+## [0.3.0](https://github.com/oanhduong/token-ninja/compare/v0.2.0...v0.3.0) (2026-04-19)
+
+
+### Features
+
+* **hook:** replace PreToolUse Bash hook with UserPromptSubmit — real token savings ([89394ec](https://github.com/oanhduong/token-ninja/commit/89394ec5e40ea8dff7cffecf99ba1822d40b19e2))
+* **setup:** auto-register ninja mcp with Gemini CLI ([6932f36](https://github.com/oanhduong/token-ninja/commit/6932f36d1cce55cbd4e3411fba4c665bb39cfc12))
+
+
+### Bug Fixes
+
+* **router:** preserve ANSI colors when the hook short-circuits the model ([1b323b2](https://github.com/oanhduong/token-ninja/commit/1b323b2de91920d366c1e74d31af9ee0da680ceb))
+
 ## [0.2.0](https://github.com/oanhduong/token-ninja/compare/v0.1.0...v0.2.0) (2026-04-19)
 
 
