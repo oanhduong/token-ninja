@@ -104,10 +104,14 @@ That's it. A postinstall hook runs `ninja setup`, which:
 1. detects your shell (`bash` / `zsh` / `fish`),
 2. detects any of `claude`, `codex`, `cursor-agent`, `aider`, `gemini`,
    `continue` on your `PATH`,
-3. appends a small managed block to your rc file so calls to those tools route
-   through `ninja` first,
-4. backs up your rc file once to `~/.zshrc.token-ninja.bak` (or equivalent),
-5. writes a default config to `~/.config/token-ninja/config.yaml`.
+3. appends a small managed block to your rc file so one-shot calls to those
+   tools route through `ninja` first,
+4. **registers `ninja mcp` as an MCP server** in Claude Code
+   (`~/.claude.json`), Cursor (`~/.cursor/mcp.json`), and Claude Desktop, so
+   **interactive** agent sessions also benefit without any manual config,
+5. backs up every file it touches once (`*.token-ninja.bak`) before the first
+   write, and skips targets where the config is malformed,
+6. writes a default config to `~/.config/token-ninja/config.yaml`.
 
 **Open a new terminal and keep using your AI tool as before.** Matched commands
 run locally and print a one-line hint like `ninja saved ~512 tokens (git-status)`.
@@ -118,7 +122,11 @@ Everything else falls through to the AI, unchanged.
 > **Opt out of the postinstall hook:**
 > `TOKEN_NINJA_SKIP_POSTINSTALL=1 npm install -g token-ninja`
 >
-> **Roll back any time:** `ninja uninstall` — strips the managed block cleanly.
+> **Opt out of MCP auto-registration only** (keep the shell shim):
+> `ninja setup --no-mcp`
+>
+> **Roll back any time:** `ninja uninstall` — strips the managed block and
+> removes the MCP entry from each client config it wrote to.
 
 ## Quickstart
 
@@ -141,9 +149,11 @@ ninja stats
 
 > **Interactive Claude Code sessions** (running `claude` with no args and typing
 > commands at the REPL) bypass the shell shim by design — once the REPL owns
-> your terminal, the shim can't see what you type. For that workflow, add
-> `ninja mcp` as an MCP server in your Claude Code config. See
-> [MCP integration](#mcp-integration) below.
+> your terminal, the shim can't see what you type. `ninja setup` handles that
+> for you automatically by registering `ninja mcp` as an MCP server in
+> `~/.claude.json`, `~/.cursor/mcp.json`, and Claude Desktop's config.
+> Open a fresh REPL after install and it's already wired up. See
+> [MCP integration](#mcp-integration) for the details.
 
 Re-run auto-setup any time: `ninja setup` · Preview without writing:
 `ninja setup --dry-run` · Scope to specific tools: `ninja setup --tool claude`.
@@ -308,15 +318,16 @@ Use `ninja rules test "your command"` to dry-run the classifier against any inpu
 
 Interactive agents (Claude Code REPL, Cursor, Claude Desktop, Continue, …)
 don't go through the shell shim — they call shell commands *from inside* the
-agent. Register token-ninja as an MCP server and the agent can consult the
+agent. Registering `token-ninja` as an MCP server lets the agent consult the
 router on every command **before** it burns tokens.
 
-```bash
-ninja mcp    # stdio server exposing maybe_execute_locally
-```
+**You don't need to configure this manually.** `ninja setup` (the postinstall
+hook) merges an entry like the one below into:
 
-**Claude Code** — register once per project (`.mcp.json`) or globally
-(`~/.claude.json`):
+- `~/.claude.json` (Claude Code)
+- `~/.cursor/mcp.json` (Cursor)
+- `~/Library/Application Support/Claude/claude_desktop_config.json` (Claude
+  Desktop, macOS — Windows and Linux paths are handled too)
 
 ```jsonc
 {
@@ -329,10 +340,16 @@ ninja mcp    # stdio server exposing maybe_execute_locally
 }
 ```
 
-Equivalent one-liner: `claude mcp add token-ninja ninja mcp`.
+Existing entries are preserved; each file is backed up once
+(`*.token-ninja.bak`) before the first modification. To opt out:
+`ninja setup --no-mcp`. To remove just the MCP entries: `ninja uninstall`.
 
-**Cursor / Claude Desktop** — same shape, under their respective
-`mcpServers` settings. Any MCP-capable client works.
+If you still want to do it yourself — e.g. a project-local `.mcp.json` or an
+MCP client we don't know about — the manual command is:
+
+```bash
+ninja mcp    # stdio server exposing maybe_execute_locally
+```
 
 Each call the model makes looks like:
 

@@ -44,11 +44,12 @@ program
 
 program
   .command("setup")
-  .description("Auto-install: detect AI tools, write shell shims into your rc file, create config")
+  .description("Auto-install: detect AI tools, write shell shims into your rc file, register ninja mcp with MCP-capable clients, create config")
   .option("--shell <name>", "shell to target (bash|zsh|fish); auto-detect by default")
   .option("--tool <id>", "hook a specific tool (repeatable); default = all detected", collect, [])
+  .option("--no-mcp", "skip auto-registering ninja mcp with Claude Code / Cursor / Claude Desktop")
   .option("--quiet", "minimal output", false)
-  .action(async (opts: { shell?: string; tool: string[]; quiet: boolean }, cmd) => {
+  .action(async (opts: { shell?: string; tool: string[]; mcp: boolean; quiet: boolean }, cmd) => {
     // The program-level `--dry-run` is hoisted by commander; merge so users
     // can pass it either before or after the subcommand name.
     const merged = cmd.optsWithGlobals();
@@ -56,6 +57,7 @@ program
       shell: opts.shell,
       tools: opts.tool,
       dryRun: merged.dryRun === true,
+      noMcp: opts.mcp === false,
       quiet: opts.quiet,
     });
     process.exit(code);
