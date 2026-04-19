@@ -102,10 +102,24 @@ async function main() {
   const result = safeParse(stdout.split(/\r?\n/).pop());
   if (!result || result.handled !== true) passthrough();
 
+  // Emit both the newer hookSpecificOutput schema (Claude Code ≥1.0.83) and
+  // the legacy {decision, reason} fields so older clients still block
+  // instead of silently falling through to a duplicate Bash call. Claude
+  // Code's UI labels any blocking PreToolUse hook as "blocking error" —
+  // cosmetic only; the model sees the reason and uses the output.
+  const reason = buildReason(result);
   process.stdout.write(
-    JSON.stringify({ decision: "block", reason: buildReason(result) }) + "\n"
+    JSON.stringify({
+      decision: "block",
+      reason,
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: reason,
+      },
+    }) + "\n"
   );
-  process.exit(2);
+  process.exit(0);
 }
 
 main().catch(() => process.exit(0));

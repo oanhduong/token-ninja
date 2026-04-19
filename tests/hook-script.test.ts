@@ -60,7 +60,7 @@ describe("Claude Code Bash hook script", () => {
     expect(r.stdout).toBe("");
   });
 
-  it("blocks Bash with decision=block and includes stdout/rule/tokens when handled", async () => {
+  it("blocks Bash and surfaces stdout/rule/tokens in both legacy and hookSpecificOutput fields when handled", async () => {
     await writeFakeNinja({
       handled: true,
       stdout: "On branch main\n",
@@ -74,9 +74,15 @@ describe("Claude Code Bash hook script", () => {
       { tool_name: "Bash", tool_input: { command: "git status" } },
       { PATH: `${dir}:${process.env.PATH ?? ""}` }
     );
-    expect(r.status).toBe(2);
+    // Exit 0 with JSON-encoded deny so Claude Code renders the block as
+    // "permission denied" rather than "error". Legacy `decision` kept as a
+    // fallback for clients predating hookSpecificOutput.
+    expect(r.status).toBe(0);
     const parsed = JSON.parse(r.stdout.trim());
     expect(parsed.decision).toBe("block");
+    expect(parsed.hookSpecificOutput.hookEventName).toBe("PreToolUse");
+    expect(parsed.hookSpecificOutput.permissionDecision).toBe("deny");
+    expect(parsed.hookSpecificOutput.permissionDecisionReason).toMatch(/git-status/);
     expect(parsed.reason).toMatch(/git-status/);
     expect(parsed.reason).toMatch(/On branch main/);
     expect(parsed.reason).toMatch(/512/);
