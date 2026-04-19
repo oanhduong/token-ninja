@@ -7,6 +7,13 @@ export interface Config {
   default_ai_tool?: string;
   fallback_command?: string;
   custom_rules_dir?: string;
+  /**
+   * When true (default), the Claude Code UserPromptSubmit hook may
+   * short-circuit the model for exact/prefix rule hits, saving the full
+   * turn cost. Set to false to disable interception globally without
+   * uninstalling the hook.
+   */
+  intercept_user_prompts?: boolean;
   stats?: {
     enabled?: boolean;
     show_savings_on_exit?: boolean;
@@ -18,6 +25,7 @@ export const DEFAULT_CONFIG: Config = {
   default_ai_tool: "claude",
   fallback_command: "{{tool}} {{input}}",
   custom_rules_dir: undefined,
+  intercept_user_prompts: true,
   stats: {
     enabled: true,
     show_savings_on_exit: true,

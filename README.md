@@ -108,13 +108,12 @@ AI tool, it already knows to consult token-ninja before spending tokens on
 commands like `git status`, `npm test`, or `docker ps`.
 
 For **Claude Code** specifically, the same postinstall also writes a
-`PreToolUse` Bash hook into `~/.claude/settings.json`. Claude Code's built-in
-`Bash` tool normally runs shell commands unconditionally; the hook intercepts
-each call, passes the command through `ninja route`, and — if a local rule
-matched — blocks the Bash call and returns the captured output back to
-Claude. Without the hook, Claude would ignore the MCP server in favor of
-Bash; with it, deterministic commands never reach the model. Skip with
-`ninja setup --no-hook`.
+`UserPromptSubmit` hook into `~/.claude/settings.json`. That event fires
+*before* your prompt turns into an API call — if token-ninja recognizes it
+with high confidence (exact or prefix match), the hook executes locally
+and short-circuits the model entirely. The prompt is never sent, the
+response is never generated: **zero input tokens, zero output tokens.**
+Anything conversational flows through to Claude untouched.
 
 Existing MCP entries are preserved, each file is backed up once
 (`*.token-ninja.bak`) before the first write, and malformed configs are
@@ -126,7 +125,7 @@ skipped safely instead of failing the install.
 > `TOKEN_NINJA_SKIP_POSTINSTALL=1 npm install -g token-ninja`
 >
 > **Roll back any time:** `ninja uninstall` — removes the MCP entry from
-> every client config it wrote to, and the Bash hook from
+> every client config it wrote to, and the UserPromptSubmit hook from
 > `~/.claude/settings.json`.
 
 ## Quickstart
@@ -332,22 +331,21 @@ exposes a single stdio tool (`maybe_execute_locally`) that the agent calls
 on every command it's about to run. If token-ninja recognizes the command,
 it answers with the output directly; if not, the agent proceeds as usual.
 
-### Claude Code: MCP + PreToolUse Bash hook
+### Claude Code: UserPromptSubmit hook (real savings)
 
-Claude Code's built-in `Bash` tool is separate from its MCP tool list, and
-the model has no default instruction to consult MCP tools before running
-shell commands. The MCP server alone therefore won't save tokens on `git
-status`-class calls. To close that gap, `ninja setup` also installs a
-`PreToolUse` Bash hook at `~/.claude/settings.json`:
+The MCP server alone doesn't save tokens in Claude Code because the model
+rarely consults MCP tools before the Bash built-in, and once a tool result
+is in context it counts the same tokens whether it came from Bash or an
+MCP call. To save real tokens we have to intercept *before* the prompt
+becomes an API call. That's what the `UserPromptSubmit` hook does:
 
 ```jsonc
 {
   "hooks": {
-    "PreToolUse": [
+    "UserPromptSubmit": [
       {
-        "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node /abs/path/to/hooks/claude-code-bash.cjs" }
+          { "type": "command", "command": "node /abs/path/to/hooks/claude-code-user-prompt.cjs" }
         ]
       }
     ]
@@ -355,18 +353,31 @@ status`-class calls. To close that gap, `ninja setup` also installs a
 }
 ```
 
-On every Bash call, the hook runs `ninja route --cwd <cwd> <command>`. On a
-match it returns `{decision:"block", reason:"..."}` with the captured output
-in the reason — Claude reads that output and answers the user without the
-Bash tool ever executing. On a miss (or any unexpected error) the hook
-exits 0 and Bash proceeds normally, so token-ninja is never a single point
-of failure for the shell.
+Every prompt you type passes through `ninja route --strict` first. If a
+high-confidence rule matches, the command runs locally and the captured
+output is rendered back to you — **the model is never invoked, no input
+tokens consumed, no output tokens generated.** If nothing matches, the
+prompt flows to Claude unchanged. A real turn-level save, not a cosmetic
+one.
+
+**Safeguards against mis-interception.** Conversational prompts should
+never be hijacked, so the hook layers five filters:
+
+1. **Strict routing** — only `exact` and `prefix` matches (no NL, no regex).
+2. **Length cap** — prompts longer than 80 chars skip (literal commands are short).
+3. **Keyword blocklist** — `explain`, `why`, `how`, `review`, `suggest`,
+   `teach`, `help me`, `should i`, `tell me about`, `walk me through`.
+4. **Escape prefixes** — start a prompt with `?`, `/raw`, or `/claude` to
+   force it through to the model this once.
+5. **Global opt-out** — set `intercept_user_prompts: false` in
+   `~/.config/token-ninja/config.yaml`.
 
 Install control:
 
-- `ninja setup --no-hook` — skip just the Bash hook (MCP still registered).
+- `ninja setup --no-hook` — skip just the prompt hook (MCP still registered).
 - `ninja setup --no-mcp` — skip just MCP (hook still installed).
-- `ninja uninstall` — removes both, plus any shell-rc shims.
+- `ninja uninstall` — removes both, plus any shell-rc shims, plus any
+  legacy `PreToolUse` Bash entry left by older versions.
 
 **You don't need to configure this manually.** `ninja setup` (the postinstall
 hook) merges an entry like the one below into:

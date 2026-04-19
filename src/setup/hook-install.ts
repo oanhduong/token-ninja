@@ -4,12 +4,22 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * Claude Code PreToolUse Bash-hook installer.
+ * Claude Code UserPromptSubmit hook installer.
  *
- * Writes a small entry into `~/.claude/settings.json` so every Bash tool call
- * first consults `ninja route` — deterministic commands are answered locally
- * and the Bash call is blocked. The merge is surgical: we keep every other
- * hook, matcher, and top-level key intact, and back the file up once
+ * Writes a small entry into `~/.claude/settings.json` so every user prompt
+ * is first routed through `ninja route --strict`. On a high-confidence
+ * match the hook short-circuits the model entirely (zero tokens, real
+ * savings); on a miss the prompt flows to Claude as usual.
+ *
+ * Migration: an earlier iteration of this installer registered a
+ * `PreToolUse` Bash hook. That approach couldn't save real tokens
+ * (output still landed in Claude's context) and surfaced as a red error
+ * panel in the UI. On install we proactively remove any lingering
+ * token-ninja entry under `PreToolUse.matcher="Bash"` so upgrades are
+ * clean without requiring `ninja uninstall` first.
+ *
+ * Merges are surgical: other matcher groups, other hooks, and unrelated
+ * top-level keys are preserved, and the file is backed up once
  * (`settings.json.token-ninja.bak`) before the first modification.
  */
 
@@ -31,14 +41,14 @@ export function claudeSettingsPath(
 }
 
 /**
- * Absolute path to the shipped hook script (hooks/claude-code-bash.cjs at
- * package root). Resolved off the compiled module location so it works when
- * invoked from `dist/setup/hook-install.js` after `npm i -g`.
+ * Absolute path to the shipped hook script. Resolved off the compiled
+ * module location so it works when invoked from
+ * `dist/setup/hook-install.js` after `npm i -g`.
  */
 export function hookScriptPath(): string {
   const here = fileURLToPath(import.meta.url);
-  // dist layout: dist/setup/hook-install.js → ../../hooks/claude-code-bash.cjs
-  return resolve(dirname(here), "..", "..", "hooks", "claude-code-bash.cjs");
+  // dist layout: dist/setup/hook-install.js → ../../hooks/claude-code-user-prompt.cjs
+  return resolve(dirname(here), "..", "..", "hooks", "claude-code-user-prompt.cjs");
 }
 
 export function hookCommand(scriptPath: string = hookScriptPath()): string {
@@ -65,11 +75,40 @@ function isTokenNinjaCommand(cmd: unknown): boolean {
   return cmd.includes(TOKEN_NINJA_MARKER);
 }
 
+function cloneGroups(raw: unknown): MatcherGroup[] {
+  return Array.isArray(raw)
+    ? (raw as MatcherGroup[]).map((g) => ({
+        matcher: g?.matcher,
+        hooks: Array.isArray(g?.hooks) ? [...g.hooks] : [],
+      }))
+    : [];
+}
+
 /**
- * Merge our Bash PreToolUse hook into the parsed settings object. Returns a
- * fresh copy and a `changed` flag. If an entry already points at the same
- * script path, we leave the file alone. If there's a stale token-ninja entry
- * with a different path (e.g. package upgraded), we rewrite it.
+ * Strip every token-ninja hook command from a set of matcher groups.
+ * Drops emptied groups. Returns the filtered array and whether anything
+ * changed.
+ */
+function stripTokenNinjaFromGroups(groups: MatcherGroup[]): {
+  next: MatcherGroup[];
+  changed: boolean;
+} {
+  let changed = false;
+  const next = groups
+    .map((group) => {
+      const hooks = Array.isArray(group.hooks) ? group.hooks : [];
+      const filtered = hooks.filter((h) => !isTokenNinjaCommand(h?.command));
+      if (filtered.length !== hooks.length) changed = true;
+      return { ...group, hooks: filtered };
+    })
+    .filter((group) => (group.hooks?.length ?? 0) > 0);
+  return { next, changed };
+}
+
+/**
+ * Merge our UserPromptSubmit hook into the parsed settings object. Also
+ * migrates users off the deprecated PreToolUse Bash hook by removing any
+ * token-ninja entry found there. Returns a fresh copy and a `changed` flag.
  */
 export function mergeHookEntry(
   existing: unknown,
@@ -77,55 +116,69 @@ export function mergeHookEntry(
 ): { next: Record<string, unknown>; changed: boolean } {
   const base: Record<string, unknown> = isObject(existing) ? { ...existing } : {};
   const hooksRoot = isObject(base.hooks) ? { ...(base.hooks as Record<string, unknown>) } : {};
-  const preToolUseRaw = hooksRoot.PreToolUse;
-  const preToolUse: MatcherGroup[] = Array.isArray(preToolUseRaw)
-    ? (preToolUseRaw as MatcherGroup[]).map((g) => ({
-        matcher: g?.matcher,
-        hooks: Array.isArray(g?.hooks) ? [...g.hooks] : [],
-      }))
-    : [];
-
-  const desiredCommand = hookCommand(scriptPath);
-  const desiredHook: HookEntry = { type: "command", command: desiredCommand };
 
   let changed = false;
-  let foundBashGroup = false;
-  for (const group of preToolUse) {
-    if (group.matcher !== "Bash") continue;
-    foundBashGroup = true;
-    const existingHooks = Array.isArray(group.hooks) ? group.hooks : [];
-    const tnIdx = existingHooks.findIndex((h) => isTokenNinjaCommand(h?.command));
-    if (tnIdx === -1) {
-      group.hooks = [desiredHook, ...existingHooks];
+
+  // Migration: drop any stale token-ninja command from PreToolUse.
+  const preToolUseBefore = cloneGroups(hooksRoot.PreToolUse);
+  if (preToolUseBefore.length > 0) {
+    const { next: preToolUseAfter, changed: preChanged } = stripTokenNinjaFromGroups(
+      preToolUseBefore
+    );
+    if (preChanged) {
       changed = true;
-    } else {
-      const prev = existingHooks[tnIdx];
-      if (!prev || prev.command !== desiredCommand) {
-        existingHooks[tnIdx] = { ...(prev ?? {}), ...desiredHook };
-        group.hooks = existingHooks;
-        changed = true;
+      if (preToolUseAfter.length === 0) {
+        delete hooksRoot.PreToolUse;
+      } else {
+        hooksRoot.PreToolUse = preToolUseAfter;
       }
     }
   }
 
-  if (!foundBashGroup) {
-    preToolUse.push({ matcher: "Bash", hooks: [desiredHook] });
+  // Install: ensure the UserPromptSubmit group has our command.
+  const upsGroups = cloneGroups(hooksRoot.UserPromptSubmit);
+  const desiredCommand = hookCommand(scriptPath);
+  const desiredHook: HookEntry = { type: "command", command: desiredCommand };
+
+  // UserPromptSubmit groups have no matcher field per Claude Code docs.
+  // We install into (or create) the first matcher-less group.
+  let hostGroup = upsGroups.find((g) => g.matcher === undefined || g.matcher === "");
+  if (!hostGroup) {
+    hostGroup = { hooks: [] };
+    upsGroups.push(hostGroup);
+  }
+  const hostHooks = Array.isArray(hostGroup.hooks) ? hostGroup.hooks : [];
+  const tnIdx = hostHooks.findIndex((h) => isTokenNinjaCommand(h?.command));
+  if (tnIdx === -1) {
+    hostGroup.hooks = [desiredHook, ...hostHooks];
     changed = true;
+  } else {
+    const prev = hostHooks[tnIdx];
+    if (!prev || prev.command !== desiredCommand) {
+      hostHooks[tnIdx] = { ...(prev ?? {}), ...desiredHook };
+      hostGroup.hooks = hostHooks;
+      changed = true;
+    }
   }
 
   if (!changed) {
     return { next: base, changed: false };
   }
 
-  hooksRoot.PreToolUse = preToolUse;
-  base.hooks = hooksRoot;
+  hooksRoot.UserPromptSubmit = upsGroups;
+  if (Object.keys(hooksRoot).length === 0) {
+    delete base.hooks;
+  } else {
+    base.hooks = hooksRoot;
+  }
   return { next: base, changed: true };
 }
 
 /**
- * Remove our hook from the settings object. Drops empty matcher groups and
- * empty `hooks.PreToolUse` / `hooks` containers so uninstall is a clean
- * inverse of install.
+ * Remove our hook from the settings object — both the current
+ * UserPromptSubmit entry and any legacy PreToolUse Bash entry left by
+ * prior versions. Drops empty matcher groups and empty containers so
+ * uninstall is a clean inverse of install.
  */
 export function removeHookEntry(existing: unknown): {
   next: Record<string, unknown>;
@@ -134,27 +187,25 @@ export function removeHookEntry(existing: unknown): {
   if (!isObject(existing)) return { next: {}, changed: false };
   const base: Record<string, unknown> = { ...existing };
   const hooksRoot = isObject(base.hooks) ? { ...(base.hooks as Record<string, unknown>) } : null;
-  if (!hooksRoot || !Array.isArray(hooksRoot.PreToolUse)) {
-    return { next: base, changed: false };
-  }
+  if (!hooksRoot) return { next: base, changed: false };
 
   let changed = false;
-  const preToolUse: MatcherGroup[] = (hooksRoot.PreToolUse as MatcherGroup[])
-    .map((group) => {
-      const hooks = Array.isArray(group?.hooks) ? group.hooks : [];
-      const filtered = hooks.filter((h) => !isTokenNinjaCommand(h?.command));
-      if (filtered.length !== hooks.length) changed = true;
-      return { ...group, hooks: filtered };
-    })
-    .filter((group) => (group.hooks?.length ?? 0) > 0);
+
+  for (const event of ["UserPromptSubmit", "PreToolUse"] as const) {
+    const groups = cloneGroups(hooksRoot[event]);
+    if (groups.length === 0) continue;
+    const { next: after, changed: eventChanged } = stripTokenNinjaFromGroups(groups);
+    if (!eventChanged) continue;
+    changed = true;
+    if (after.length === 0) {
+      delete hooksRoot[event];
+    } else {
+      hooksRoot[event] = after;
+    }
+  }
 
   if (!changed) return { next: base, changed: false };
 
-  if (preToolUse.length === 0) {
-    delete hooksRoot.PreToolUse;
-  } else {
-    hooksRoot.PreToolUse = preToolUse;
-  }
   if (Object.keys(hooksRoot).length === 0) {
     delete base.hooks;
   } else {

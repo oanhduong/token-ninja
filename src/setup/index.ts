@@ -22,7 +22,7 @@ export interface SetupOpts {
   dryRun?: boolean;
   /** Skip auto-registering `ninja mcp` with Claude Code / Cursor / Claude Desktop. */
   noMcp?: boolean;
-  /** Skip installing the Claude Code PreToolUse Bash hook. */
+  /** Skip installing the Claude Code UserPromptSubmit hook. */
   noHook?: boolean;
 }
 
@@ -102,10 +102,10 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
       const hook = await installHook({ dryRun: true });
       if (hook.changed) {
         process.stdout.write(
-          `[dry-run] would install Claude Code Bash hook in ${hook.path}${hook.created ? " (create)" : ""}\n`
+          `[dry-run] would install Claude Code UserPromptSubmit hook in ${hook.path}${hook.created ? " (create)" : ""}\n`
         );
       } else if (hook.skippedReason) {
-        process.stdout.write(`[dry-run] skip Bash hook: ${hook.skippedReason}\n`);
+        process.stdout.write(`[dry-run] skip UserPromptSubmit hook: ${hook.skippedReason}\n`);
       }
     }
     return 0;
@@ -144,12 +144,12 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
     if (hookResult) {
       if (hookResult.changed) {
         lines.push(
-          `  bash hook   : installed Claude Code PreToolUse hook (${hookResult.path})${hookResult.created ? " [created]" : ""}`
+          `  prompt hook : installed Claude Code UserPromptSubmit hook (${hookResult.path})${hookResult.created ? " [created]" : ""}`
         );
       } else if (hookResult.skippedReason) {
-        lines.push(`  bash hook   : skipped — ${hookResult.skippedReason}`);
+        lines.push(`  prompt hook : skipped — ${hookResult.skippedReason}`);
       } else {
-        lines.push(`  bash hook   : already installed`);
+        lines.push(`  prompt hook : already installed`);
       }
     }
 
@@ -180,7 +180,7 @@ export async function runUninstall(opts: { shell?: string; quiet?: boolean } = {
       process.stdout.write(`token-ninja: removed MCP entry from ${unregistered.join(", ")}\n`);
     }
     if (hook.changed) {
-      process.stdout.write(`token-ninja: removed Bash hook from ${hook.path}\n`);
+      process.stdout.write(`token-ninja: removed Claude Code hook(s) from ${hook.path}\n`);
     }
   }
   return 0;

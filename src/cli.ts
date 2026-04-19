@@ -46,12 +46,16 @@ program
 program
   .command("route <input...>")
   .description(
-    "Classify and execute a command with captured output; emit JSON (handled|unhandled). Used by the Claude Code Bash hook; safe for any integration that needs a one-shot router call without AI fallback."
+    "Classify and execute a command with captured output; emit JSON (handled|unhandled). Used by the Claude Code UserPromptSubmit hook; safe for any integration that needs a one-shot router call without AI fallback."
   )
   .option("--cwd <dir>", "working directory (defaults to process.cwd())")
-  .action(async (input: string[], opts: { cwd?: string }) => {
+  .option(
+    "--strict",
+    "reject nl + regex matches (only exact/prefix count as handled); use from hooks to avoid intercepting conversational prompts"
+  )
+  .action(async (input: string[], opts: { cwd?: string; strict?: boolean }) => {
     const command = input.join(" ").trim();
-    const result = await routeOnce(command, { cwd: opts.cwd });
+    const result = await routeOnce(command, { cwd: opts.cwd, strict: opts.strict === true });
     process.stdout.write(JSON.stringify(result) + "\n");
     process.exit(0);
   });
@@ -62,7 +66,7 @@ program
   .option("--shell <name>", "shell to target (bash|zsh|fish); auto-detect by default")
   .option("--tool <id>", "hook a specific tool (repeatable); default = all detected", collect, [])
   .option("--no-mcp", "skip auto-registering ninja mcp with Claude Code / Cursor / Claude Desktop")
-  .option("--no-hook", "skip installing the Claude Code PreToolUse Bash hook")
+  .option("--no-hook", "skip installing the Claude Code UserPromptSubmit hook")
   .option("--quiet", "minimal output", false)
   .action(
     async (

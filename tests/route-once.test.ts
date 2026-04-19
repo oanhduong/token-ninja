@@ -33,4 +33,24 @@ describe("routeOnce", () => {
       expect(typeof r.tokens_saved_estimate).toBe("number");
     }
   });
+
+  it("strict mode rejects nl matches", async () => {
+    // `what branch am I on` matches via nl keywords in non-strict mode.
+    const lax = await routeOnce("what branch am I on");
+    expect(lax.handled).toBe(true);
+    if (lax.handled) expect(lax.matched_via).toBe("nl");
+
+    const strict = await routeOnce("what branch am I on", { strict: true });
+    expect(strict.handled).toBe(false);
+    if (!strict.handled) {
+      expect(strict.reason).toBe("low_confidence");
+      expect(strict.detail).toBe("nl");
+    }
+  });
+
+  it("strict mode still accepts exact matches", async () => {
+    const r = await routeOnce("git status", { strict: true });
+    expect(r.handled).toBe(true);
+    if (r.handled) expect(r.matched_via).toBe("exact");
+  });
 });

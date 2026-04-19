@@ -10,6 +10,14 @@ import {
 
 export interface RouteOnceOpts {
   cwd?: string;
+  /**
+   * Require a high-confidence match. When true, only `exact` and `prefix`
+   * classifier hits are accepted; `regex` and `nl` are rejected with
+   * reason:"low_confidence". Used by the UserPromptSubmit hook so
+   * conversational inputs like "can you explain git rebase?" never
+   * accidentally short-circuit the model.
+   */
+  strict?: boolean;
 }
 
 export type RouteOnceResult =
@@ -24,7 +32,7 @@ export type RouteOnceResult =
     }
   | {
       handled: false;
-      reason: "empty_command" | "safety_block" | "no_match";
+      reason: "empty_command" | "safety_block" | "no_match" | "low_confidence";
       detail?: string;
     };
 
@@ -57,6 +65,11 @@ export async function routeOnce(
   if (!match) {
     await recordFallback("no_match");
     return { handled: false, reason: "no_match" };
+  }
+
+  if (opts.strict && match.matchedVia !== "exact" && match.matchedVia !== "prefix") {
+    await recordFallback("low_confidence");
+    return { handled: false, reason: "low_confidence", detail: match.matchedVia };
   }
 
   const safety2 = validate(match.command);
