@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
-import type { LoadedRules, Rule, RuleFile } from "./types.js";
+import type { LoadedRules, PrefixEntry, Rule, RuleFile } from "./types.js";
 import { classify } from "../router/classifier.js";
 import { logger } from "../utils/logger.js";
 
@@ -75,6 +75,7 @@ export async function loadRules(): Promise<LoadedRules> {
   const byDomain = new Map<string, Rule[]>();
   const exactIndex = new Map<string, Rule>();
   const prefixRules: Rule[] = [];
+  const prefixByFirstWord = new Map<string, PrefixEntry[]>();
   const regexRules: Rule[] = [];
   const nlRules: Rule[] = [];
 
@@ -92,6 +93,15 @@ export async function loadRules(): Promise<LoadedRules> {
         break;
       case "prefix":
         prefixRules.push(r);
+        for (const p of r.match.patterns) {
+          const norm = p.trim().replace(/\s+/g, " ");
+          if (!norm) continue;
+          const space = norm.indexOf(" ");
+          const head = space === -1 ? norm : norm.slice(0, space);
+          const bucket = prefixByFirstWord.get(head) ?? [];
+          bucket.push({ rule: r, pattern: norm });
+          prefixByFirstWord.set(head, bucket);
+        }
         break;
       case "regex":
         regexRules.push(r);
@@ -102,7 +112,15 @@ export async function loadRules(): Promise<LoadedRules> {
     }
   }
 
-  cache = { rules, byDomain, exactIndex, prefixRules, regexRules, nlRules };
+  cache = {
+    rules,
+    byDomain,
+    exactIndex,
+    prefixRules,
+    prefixByFirstWord,
+    regexRules,
+    nlRules,
+  };
   return cache;
 }
 

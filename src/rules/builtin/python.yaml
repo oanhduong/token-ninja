@@ -271,3 +271,131 @@ rules:
       patterns: ["flake8"]
     action: { type: shell, command: "flake8", args_passthrough: true }
     safety: read-only
+
+  # ── pdm ─────────────────────────────────────────────────────────────
+  - id: pdm-info
+    match:
+      type: exact
+      patterns:
+        - "pdm --version"
+        - "pdm -V"
+        - "pdm info"
+        - "pdm config"
+        - "pdm list"
+        - "pdm list --tree"
+        - "pdm show"
+        - "pdm lock"
+        - "pdm install"
+        - "pdm sync"
+        - "pdm build"
+        - "pdm outdated"
+        - "pdm self list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: pdm-passthrough
+    match:
+      type: prefix
+      patterns: ["pdm install", "pdm sync", "pdm add", "pdm remove", "pdm update", "pdm run", "pdm lock", "pdm show", "pdm list", "pdm build", "pdm outdated"]
+    action: { type: shell, command: "pdm", args_passthrough: true }
+    safety: write-network
+
+  # ── hatch ───────────────────────────────────────────────────────────
+  - id: hatch-info
+    match:
+      type: exact
+      patterns:
+        - "hatch --version"
+        - "hatch -V"
+        - "hatch env show"
+        - "hatch config show"
+        - "hatch project metadata"
+        - "hatch version"
+        - "hatch status"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: hatch-passthrough
+    match:
+      type: prefix
+      patterns: ["hatch run", "hatch env", "hatch build", "hatch publish", "hatch test", "hatch version", "hatch dep"]
+    action: { type: shell, command: "hatch", args_passthrough: true }
+    safety: write-network
+
+  # ── pipenv ──────────────────────────────────────────────────────────
+  - id: pipenv-info
+    match:
+      type: exact
+      patterns:
+        - "pipenv --version"
+        - "pipenv --venv"
+        - "pipenv --py"
+        - "pipenv --where"
+        - "pipenv graph"
+        - "pipenv check"
+        - "pipenv lock --clear"
+        - "pipenv lock"
+        - "pipenv requirements"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: pipenv-passthrough
+    match:
+      type: prefix
+      patterns: ["pipenv install", "pipenv uninstall", "pipenv run", "pipenv shell", "pipenv lock", "pipenv update", "pipenv clean"]
+    action: { type: shell, command: "pipenv", args_passthrough: true }
+    safety: write-network
+
+  # ── pipx ────────────────────────────────────────────────────────────
+  - id: pipx-info
+    match:
+      type: exact
+      patterns:
+        - "pipx --version"
+        - "pipx list"
+        - "pipx list --short"
+        - "pipx environment"
+        - "pipx ensurepath"
+        - "pipx completions"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: pipx-passthrough
+    match:
+      type: prefix
+      patterns: ["pipx install", "pipx uninstall", "pipx upgrade", "pipx run", "pipx inject", "pipx runpip", "pipx reinstall"]
+    action: { type: shell, command: "pipx", args_passthrough: true }
+    safety: write-network
+
+  # ── Type checkers / tools ───────────────────────────────────────────
+  - id: pyright-info
+    match:
+      type: exact
+      patterns:
+        - "pyright --version"
+        - "pyright --help"
+        - "pyright"
+        - "pyright --outputjson"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: pyright-passthrough
+    match:
+      type: prefix
+      patterns: ["pyright"]
+    action: { type: shell, command: "pyright", args_passthrough: true }
+    safety: read-only
+
+  - id: bandit
+    match:
+      type: prefix
+      patterns: ["bandit -r", "bandit"]
+    action: { type: shell, command: "bandit", args_passthrough: true }
+    safety: read-only
+
+  - id: pyupgrade
+    match:
+      type: prefix
+      patterns: ["pyupgrade"]
+    action: { type: shell, command: "pyupgrade", args_passthrough: true }
+    safety: write-confined

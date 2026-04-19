@@ -437,3 +437,283 @@ show running containers
 list images
 show pods
 list services
+
+# ── cloud CLIs ────────────────────────────────────────────────────────
+aws sts get-caller-identity
+aws s3 ls
+aws ec2 describe-instances
+aws iam list-users
+aws lambda list-functions
+aws logs describe-log-groups
+aws eks list-clusters
+aws rds describe-db-instances
+aws cloudformation list-stacks
+aws --version
+az account show
+az group list
+az vm list
+az aks list
+az --version
+gcloud auth list
+gcloud config list
+gcloud projects list
+gcloud compute instances list
+gcloud container clusters list
+gcloud version
+gsutil ls gs://my-bucket
+vercel ls
+vercel logs my-project
+vercel whoami
+netlify status
+netlify sites:list
+heroku apps
+heroku logs --tail
+heroku ps
+fly status
+fly apps list
+flyctl status
+railway status
+supabase status
+doctl compute droplet list
+
+# ── IaC ───────────────────────────────────────────────────────────────
+terraform plan
+terraform init
+terraform fmt -check
+terraform validate
+terraform workspace list
+terraform output -json
+terraform state list
+terraform providers
+terraform version
+tofu plan
+tofu validate
+ansible --version
+ansible-playbook --syntax-check site.yml
+ansible-inventory --list
+ansible-galaxy list
+ansible-lint
+vagrant status
+vagrant global-status
+vagrant box list
+pulumi preview
+pulumi stack ls
+pulumi whoami
+packer validate template.json
+cdk synth
+cdk diff
+cdk ls
+
+# ── bundlers ──────────────────────────────────────────────────────────
+vite build
+vite preview
+vite --version
+turbo build
+turbo run test
+turbo --version
+esbuild --version
+parcel build src/index.html
+parcel --version
+rollup -c
+webpack --mode production
+webpack serve
+rspack build
+rsbuild build
+tsup src/index.ts
+nx list
+nx run myapp:build
+nx affected --target=test
+
+# ── Deno ──────────────────────────────────────────────────────────────
+deno --version
+deno info
+deno test
+deno fmt --check
+deno lint
+deno check
+deno task build
+deno run --allow-net script.ts
+
+# ── Elixir / Erlang ───────────────────────────────────────────────────
+mix --version
+mix deps.get
+mix test
+mix compile
+mix format --check-formatted
+mix credo
+mix phx.server
+mix phx.routes
+mix ecto.migrate
+elixir --version
+rebar3 compile
+rebar3 eunit
+
+# ── Dart / Flutter ────────────────────────────────────────────────────
+dart --version
+dart pub get
+dart analyze
+dart format .
+dart test
+flutter --version
+flutter doctor
+flutter doctor -v
+flutter devices
+flutter pub get
+flutter clean
+flutter analyze
+flutter test
+flutter build apk
+flutter run
+
+# ── process supervisors ───────────────────────────────────────────────
+pm2 list
+pm2 status
+pm2 logs
+pm2 start ecosystem.config.js
+pm2 restart all
+systemctl --user list-units
+systemctl --user status myapp
+systemctl status nginx
+systemctl list-timers
+journalctl --user -u myapp
+journalctl -u nginx
+launchctl list
+overmind ps
+overmind start
+foreman start
+supervisorctl status
+
+# ── env management ────────────────────────────────────────────────────
+direnv status
+direnv allow
+asdf current
+asdf list
+asdf plugin list
+asdf install nodejs 20.11.0
+mise ls
+mise current
+mise install node@20
+mise use python@3.12
+mise env
+nvm current
+nvm ls
+pyenv versions
+pyenv which python
+rbenv versions
+jenv versions
+nix --version
+nix flake show
+nix flake check
+nix-env -q
+nix-channel --list
+sdk current
+sdk list
+conda info --envs
+conda list
+conda env list
+mamba list
+
+# ── distributed systems ───────────────────────────────────────────────
+consul version
+consul members
+consul catalog services
+consul kv get foo
+etcdctl version
+etcdctl endpoint status
+etcdctl endpoint health
+etcdctl member list
+etcdctl get /config/foo
+zkServer.sh status
+nats --version
+nats server check
+nats stream ls
+kafka-topics.sh --list
+kcat -L
+rabbitmqctl status
+rabbitmqctl list_queues
+
+# ── database extras ───────────────────────────────────────────────────
+pg_isready
+pg_isready -h localhost -p 5432
+pg_config --version
+atlas --version
+atlas clusters list
+atlas auth whoami
+cockroach version
+cockroach node status
+clickhouse-client --version
+influx version
+influx bucket list
+cqlsh --version
+nodetool status
+nodetool info
+aws dynamodb list-tables
+aws dynamodb describe-table --table-name users
+duckdb --version
+prisma --version
+prisma generate
+prisma migrate status
+npx prisma generate
+drizzle-kit check
+drizzle-kit generate
+sequelize-cli db:migrate:status
+knex migrate:list
+
+# ── python extras ─────────────────────────────────────────────────────
+pdm --version
+pdm install
+pdm lock
+pdm add requests
+pdm list --tree
+hatch --version
+hatch env show
+hatch run test
+pipenv --version
+pipenv graph
+pipenv install
+pipx list
+pipx install black
+pipx install ruff
+pyright --version
+pyright src
+pylint src
+bandit -r src
+
+# ── build-tools extras ────────────────────────────────────────────────
+just --list
+just --summary
+just test
+task --list
+task -l
+task build
+meson --version
+meson compile
+meson test
+gradle --version
+gradle tasks
+./gradlew build
+./gradlew test
+mvn --version
+mvn clean package
+mvn test
+mvn dependency:tree
+./mvnw test
+
+# ── modern linters ────────────────────────────────────────────────────
+biome --version
+biome check .
+biome check --write .
+biome lint .
+biome format --write .
+biome ci .
+oxlint src
+dprint check
+dprint fmt
+dprint --version
+actionlint .github/workflows/ci.yml
+jsonlint package.json
+gitleaks detect
+gitleaks version
+pre-commit --version
+pre-commit run --all-files
+pre-commit install

@@ -93,3 +93,72 @@ rules:
       patterns: ["lein"]
     action: { type: shell, command: "lein", args_passthrough: true }
     safety: write-network
+
+  # ── just ────────────────────────────────────────────────────────────
+  - id: just-info
+    match:
+      type: exact
+      patterns:
+        - "just"
+        - "just --version"
+        - "just --list"
+        - "just -l"
+        - "just --summary"
+        - "just --show"
+        - "just --dump"
+        - "just --fmt --check"
+        - "just --evaluate"
+        - "just --choose"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: just-passthrough
+    match:
+      type: prefix
+      patterns: ["just --list", "just -l", "just --show", "just --summary", "just --dump", "just --evaluate", "just test", "just build", "just run", "just lint", "just fmt"]
+    action: { type: shell, command: "just", args_passthrough: true }
+    safety: write-confined
+
+  # ── task (go-task) ──────────────────────────────────────────────────
+  - id: task-info
+    match:
+      type: exact
+      patterns:
+        - "task --version"
+        - "task --list"
+        - "task -l"
+        - "task --list-all"
+        - "task -a"
+        - "task --summary"
+        - "task"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: task-passthrough
+    match:
+      type: prefix
+      patterns: ["task --list", "task -l", "task --list-all", "task -a", "task --summary", "task --status", "task "]
+    action: { type: shell, command: "task", args_passthrough: true }
+    safety: write-confined
+
+  # ── Meson ───────────────────────────────────────────────────────────
+  - id: meson-info
+    match:
+      type: exact
+      patterns:
+        - "meson --version"
+        - "meson compile"
+        - "meson test"
+        - "meson introspect"
+        - "meson configure"
+        - "meson dist"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: meson-passthrough
+    match:
+      type: prefix
+      patterns: ["meson setup", "meson compile", "meson test", "meson introspect", "meson configure", "meson install"]
+    action: { type: shell, command: "meson", args_passthrough: true }
+    safety: write-confined
+

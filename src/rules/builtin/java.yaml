@@ -100,3 +100,27 @@ rules:
       patterns: ["./gradlew"]
     action: { type: shell, command: "./gradlew", args_passthrough: true }
     safety: write-network
+
+  - id: mvnw-common
+    match:
+      type: exact
+      patterns:
+        - "./mvnw --version"
+        - "./mvnw -v"
+        - "./mvnw compile"
+        - "./mvnw test"
+        - "./mvnw package"
+        - "./mvnw verify"
+        - "./mvnw clean"
+        - "./mvnw clean install"
+        - "./mvnw clean package"
+        - "./mvnw dependency:tree"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: mvnw-passthrough
+    match:
+      type: prefix
+      patterns: ["./mvnw"]
+    action: { type: shell, command: "./mvnw", args_passthrough: true }
+    safety: write-network

@@ -21,18 +21,21 @@ export async function classify(
     if (cmd) return { rule: exact, command: cmd, matchedVia: "exact" };
   }
 
-  // 2. prefix (longest prefix wins so "git commit -am" beats "git commit")
+  // 2. prefix (longest prefix wins so "git commit -am" beats "git commit").
+  // Candidates are bucketed by the first whitespace-delimited token of the
+  // pattern so a single input only scans rules that share its first word.
   let bestPrefix: { rule: Rule; pattern: string; args: string } | null = null;
-  for (const rule of rules.prefixRules) {
-    if (rule.match.type !== "prefix") continue;
-    for (const p of rule.match.patterns) {
-      const pat = normalizeWhitespace(p);
-      if (input === pat || input.startsWith(pat + " ")) {
-        if (!bestPrefix || pat.length > bestPrefix.pattern.length) {
+  const firstSpace = input.indexOf(" ");
+  const firstWord = firstSpace === -1 ? input : input.slice(0, firstSpace);
+  const candidates = rules.prefixByFirstWord.get(firstWord);
+  if (candidates) {
+    for (const { rule, pattern } of candidates) {
+      if (input === pattern || input.startsWith(pattern + " ")) {
+        if (!bestPrefix || pattern.length > bestPrefix.pattern.length) {
           bestPrefix = {
             rule,
-            pattern: pat,
-            args: input.length > pat.length ? input.slice(pat.length + 1) : "",
+            pattern,
+            args: input.length > pattern.length ? input.slice(pattern.length + 1) : "",
           };
         }
       }

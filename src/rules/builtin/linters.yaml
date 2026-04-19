@@ -83,3 +83,103 @@ rules:
       patterns: ["markdownlint"]
     action: { type: shell, command: "markdownlint", args_passthrough: true }
     safety: write-confined
+
+  # ── Biome ───────────────────────────────────────────────────────────
+  - id: biome-info
+    match:
+      type: exact
+      patterns:
+        - "biome --version"
+        - "biome -V"
+        - "biome check"
+        - "biome check ."
+        - "biome check --write"
+        - "biome check --write ."
+        - "biome lint"
+        - "biome lint ."
+        - "biome format"
+        - "biome format --write"
+        - "biome format --write ."
+        - "biome ci"
+        - "biome ci ."
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: biome-passthrough
+    match:
+      type: prefix
+      patterns: ["biome check", "biome lint", "biome format", "biome ci", "biome migrate", "biome explain"]
+    action: { type: shell, command: "biome", args_passthrough: true }
+    safety: write-confined
+
+  # ── oxlint ──────────────────────────────────────────────────────────
+  - id: oxlint
+    match:
+      type: prefix
+      patterns: ["oxlint --fix", "oxlint"]
+    action: { type: shell, command: "oxlint", args_passthrough: true }
+    safety: write-confined
+
+  # ── dprint ──────────────────────────────────────────────────────────
+  - id: dprint-info
+    match:
+      type: exact
+      patterns:
+        - "dprint --version"
+        - "dprint check"
+        - "dprint fmt"
+        - "dprint fmt --check"
+        - "dprint output-file-paths"
+        - "dprint output-format-times"
+        - "dprint config dump"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: dprint-passthrough
+    match:
+      type: prefix
+      patterns: ["dprint check", "dprint fmt", "dprint output-file-paths", "dprint output-format-times"]
+    action: { type: shell, command: "dprint", args_passthrough: true }
+    safety: write-confined
+
+  # ── actionlint / jsonlint / gitleaks / pre-commit ───────────────────
+  - id: actionlint
+    match:
+      type: prefix
+      patterns: ["actionlint"]
+    action: { type: shell, command: "actionlint", args_passthrough: true }
+    safety: read-only
+
+  - id: jsonlint
+    match:
+      type: prefix
+      patterns: ["jsonlint"]
+    action: { type: shell, command: "jsonlint", args_passthrough: true }
+    safety: read-only
+
+  - id: gitleaks
+    match:
+      type: prefix
+      patterns: ["gitleaks detect", "gitleaks protect", "gitleaks version"]
+    action: { type: shell, command: "gitleaks", args_passthrough: true }
+    safety: read-only
+
+  - id: pre-commit-info
+    match:
+      type: exact
+      patterns:
+        - "pre-commit --version"
+        - "pre-commit run --all-files"
+        - "pre-commit run"
+        - "pre-commit install"
+        - "pre-commit autoupdate"
+        - "pre-commit clean"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: pre-commit-passthrough
+    match:
+      type: prefix
+      patterns: ["pre-commit run", "pre-commit install", "pre-commit autoupdate", "pre-commit try-repo", "pre-commit migrate-config"]
+    action: { type: shell, command: "pre-commit", args_passthrough: true }
+    safety: write-confined

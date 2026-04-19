@@ -1,0 +1,44 @@
+domain: deno
+rules:
+  - id: deno-info
+    match:
+      type: exact
+      patterns:
+        - "deno --version"
+        - "deno -V"
+        - "deno info"
+        - "deno upgrade --dry-run"
+        - "deno task"
+        - "deno coverage"
+        - "deno bench"
+        - "deno doc"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: deno-check
+    match:
+      type: exact
+      patterns:
+        - "deno check"
+        - "deno fmt"
+        - "deno fmt --check"
+        - "deno lint"
+        - "deno test"
+        - "deno test --allow-all"
+        - "deno test --coverage"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: deno-run-passthrough
+    match:
+      type: prefix
+      patterns: ["deno run", "deno task", "deno test", "deno bench", "deno doc", "deno info", "deno fmt", "deno lint", "deno check", "deno compile", "deno install"]
+    action: { type: shell, command: "deno", args_passthrough: true }
+    safety: write-network
+
+  - id: deno-cache
+    match:
+      type: prefix
+      patterns: ["deno cache"]
+    action: { type: shell, command: "deno cache", args_passthrough: true }
+    safety: write-network

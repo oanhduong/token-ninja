@@ -1,0 +1,105 @@
+domain: distributed
+rules:
+  # ── Consul ──────────────────────────────────────────────────────────
+  - id: consul-info
+    match:
+      type: exact
+      patterns:
+        - "consul version"
+        - "consul --version"
+        - "consul members"
+        - "consul operator raft list-peers"
+        - "consul catalog nodes"
+        - "consul catalog services"
+        - "consul catalog datacenters"
+        - "consul info"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: consul-kv
+    match:
+      type: prefix
+      patterns: ["consul kv get", "consul kv list", "consul catalog", "consul services", "consul acl", "consul snapshot inspect"]
+    action: { type: shell, command: "consul", args_passthrough: true }
+    safety: write-network
+
+  # ── etcd / etcdctl ──────────────────────────────────────────────────
+  - id: etcd-info
+    match:
+      type: exact
+      patterns:
+        - "etcdctl version"
+        - "etcdctl --version"
+        - "etcdctl endpoint status"
+        - "etcdctl endpoint health"
+        - "etcdctl member list"
+        - "etcd --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  - id: etcd-get
+    match:
+      type: prefix
+      patterns: ["etcdctl get", "etcdctl get --prefix", "etcdctl endpoint", "etcdctl member", "etcdctl lease list", "etcdctl alarm list"]
+    action: { type: shell, command: "etcdctl", args_passthrough: true }
+    safety: write-network
+
+  # ── Zookeeper (via zkCli) ───────────────────────────────────────────
+  - id: zookeeper-info
+    match:
+      type: exact
+      patterns:
+        - "zkCli.sh"
+        - "zkServer.sh status"
+        - "zkServer.sh version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── NATS ────────────────────────────────────────────────────────────
+  - id: nats-info
+    match:
+      type: exact
+      patterns:
+        - "nats --version"
+        - "nats server check"
+        - "nats server ls"
+        - "nats server report connz"
+        - "nats server report jsz"
+        - "nats account info"
+        - "nats stream ls"
+        - "nats consumer ls"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── Kafka (kcat / kafka-topics.sh) ──────────────────────────────────
+  - id: kafka-info
+    match:
+      type: exact
+      patterns:
+        - "kafka-topics.sh --list"
+        - "kafka-consumer-groups.sh --list"
+        - "kafka-configs.sh --describe"
+        - "kcat -L"
+        - "kcat -V"
+        - "kcat -h"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
+  # ── RabbitMQ ────────────────────────────────────────────────────────
+  - id: rabbitmqctl-info
+    match:
+      type: exact
+      patterns:
+        - "rabbitmqctl status"
+        - "rabbitmqctl cluster_status"
+        - "rabbitmqctl list_queues"
+        - "rabbitmqctl list_exchanges"
+        - "rabbitmqctl list_bindings"
+        - "rabbitmqctl list_connections"
+        - "rabbitmqctl list_consumers"
+        - "rabbitmqctl list_vhosts"
+        - "rabbitmqctl list_users"
+        - "rabbitmqctl environment"
+        - "rabbitmqctl version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
