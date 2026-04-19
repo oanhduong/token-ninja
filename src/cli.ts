@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from "commander";
 import { runRouter } from "./router/index.js";
+import { routeOnce } from "./router/route-once.js";
 import { startMcpServer } from "./mcp/server.js";
 import { runInit } from "./config/user-config.js";
 import { runSetup, runUninstall } from "./setup/index.js";
@@ -43,25 +44,45 @@ program
   });
 
 program
+  .command("route <input...>")
+  .description(
+    "Classify and execute a command with captured output; emit JSON (handled|unhandled). Used by the Claude Code Bash hook; safe for any integration that needs a one-shot router call without AI fallback."
+  )
+  .option("--cwd <dir>", "working directory (defaults to process.cwd())")
+  .action(async (input: string[], opts: { cwd?: string }) => {
+    const command = input.join(" ").trim();
+    const result = await routeOnce(command, { cwd: opts.cwd });
+    process.stdout.write(JSON.stringify(result) + "\n");
+    process.exit(0);
+  });
+
+program
   .command("setup")
   .description("Auto-install: detect AI tools, write shell shims into your rc file, register ninja mcp with MCP-capable clients, create config")
   .option("--shell <name>", "shell to target (bash|zsh|fish); auto-detect by default")
   .option("--tool <id>", "hook a specific tool (repeatable); default = all detected", collect, [])
   .option("--no-mcp", "skip auto-registering ninja mcp with Claude Code / Cursor / Claude Desktop")
+  .option("--no-hook", "skip installing the Claude Code PreToolUse Bash hook")
   .option("--quiet", "minimal output", false)
-  .action(async (opts: { shell?: string; tool: string[]; mcp: boolean; quiet: boolean }, cmd) => {
-    // The program-level `--dry-run` is hoisted by commander; merge so users
-    // can pass it either before or after the subcommand name.
-    const merged = cmd.optsWithGlobals();
-    const code = await runSetup({
-      shell: opts.shell,
-      tools: opts.tool,
-      dryRun: merged.dryRun === true,
-      noMcp: opts.mcp === false,
-      quiet: opts.quiet,
-    });
-    process.exit(code);
-  });
+  .action(
+    async (
+      opts: { shell?: string; tool: string[]; mcp: boolean; hook: boolean; quiet: boolean },
+      cmd
+    ) => {
+      // The program-level `--dry-run` is hoisted by commander; merge so users
+      // can pass it either before or after the subcommand name.
+      const merged = cmd.optsWithGlobals();
+      const code = await runSetup({
+        shell: opts.shell,
+        tools: opts.tool,
+        dryRun: merged.dryRun === true,
+        noMcp: opts.mcp === false,
+        noHook: opts.hook === false,
+        quiet: opts.quiet,
+      });
+      process.exit(code);
+    }
+  );
 
 program
   .command("uninstall")

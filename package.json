@@ -33,6 +33,7 @@
   },
   "files": [
     "dist",
+    "hooks",
     "scripts/post-install.mjs",
     "README.md",
     "LICENSE"

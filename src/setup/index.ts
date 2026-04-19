@@ -7,6 +7,8 @@ import { detectShell, installBlock, uninstallBlock, rcFileFor } from "./shell-in
 import type { ShellName } from "./shell-install.js";
 import { installMcp, uninstallMcp } from "./mcp-install.js";
 import type { McpInstallResult } from "./mcp-install.js";
+import { installHook, uninstallHook } from "./hook-install.js";
+import type { HookInstallResult } from "./hook-install.js";
 import { logger } from "../utils/logger.js";
 
 export interface SetupOpts {
@@ -20,6 +22,8 @@ export interface SetupOpts {
   dryRun?: boolean;
   /** Skip auto-registering `ninja mcp` with Claude Code / Cursor / Claude Desktop. */
   noMcp?: boolean;
+  /** Skip installing the Claude Code PreToolUse Bash hook. */
+  noHook?: boolean;
 }
 
 function normalizeShell(s: string | undefined): ShellName {
@@ -94,6 +98,16 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
         }
       }
     }
+    if (!opts.noHook) {
+      const hook = await installHook({ dryRun: true });
+      if (hook.changed) {
+        process.stdout.write(
+          `[dry-run] would install Claude Code Bash hook in ${hook.path}${hook.created ? " (create)" : ""}\n`
+        );
+      } else if (hook.skippedReason) {
+        process.stdout.write(`[dry-run] skip Bash hook: ${hook.skippedReason}\n`);
+      }
+    }
     return 0;
   }
 
@@ -101,6 +115,7 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
   await ensureConfig(hooked[0]);
 
   const mcpResults: McpInstallResult[] = opts.noMcp ? [] : await installMcp();
+  const hookResult: HookInstallResult | null = opts.noHook ? null : await installHook();
 
   if (!opts.quiet) {
     const lines = [
@@ -126,6 +141,18 @@ export async function runSetup(opts: SetupOpts = {}): Promise<number> {
       }
     }
 
+    if (hookResult) {
+      if (hookResult.changed) {
+        lines.push(
+          `  bash hook   : installed Claude Code PreToolUse hook (${hookResult.path})${hookResult.created ? " [created]" : ""}`
+        );
+      } else if (hookResult.skippedReason) {
+        lines.push(`  bash hook   : skipped — ${hookResult.skippedReason}`);
+      } else {
+        lines.push(`  bash hook   : already installed`);
+      }
+    }
+
     lines.push(``);
     lines.push(`Open a new terminal (or: source ${result.rcFile}) and use your AI tool normally.`);
     lines.push(`Commands token-ninja recognizes run locally; everything else passes through.`);
@@ -140,6 +167,7 @@ export async function runUninstall(opts: { shell?: string; quiet?: boolean } = {
   const shell = normalizeShell(opts.shell);
   const result = await uninstallBlock(shell);
   const mcp = await uninstallMcp();
+  const hook = await uninstallHook();
   if (!opts.quiet) {
     if (result.changed) {
       process.stdout.write(`token-ninja: removed managed block from ${result.rcFile}\n`);
@@ -150,6 +178,9 @@ export async function runUninstall(opts: { shell?: string; quiet?: boolean } = {
     const unregistered = mcp.filter((r) => r.changed).map((r) => r.target.label);
     if (unregistered.length > 0) {
       process.stdout.write(`token-ninja: removed MCP entry from ${unregistered.join(", ")}\n`);
+    }
+    if (hook.changed) {
+      process.stdout.write(`token-ninja: removed Bash hook from ${hook.path}\n`);
     }
   }
   return 0;
