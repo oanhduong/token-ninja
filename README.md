@@ -2,13 +2,19 @@
 
 # token&#8209;ninja
 
-### Stop paying AI tokens for commands your shell already knows how to run.
+### The Claude Code companion that pays zero tokens for commands your shell already knows how to run.
 
-`token-ninja` is a deterministic router that sits between you and your AI coding
-assistant. Commands like `git status`, `npm install`, `docker ps`, or
-`show recent commits` are resolved locally with **zero LLM calls**.
-Anything it doesn't confidently recognize is passed straight through to your AI —
-unchanged, uninterrupted.
+**Built for Claude Code first.** `token-ninja` hooks into Claude Code's
+`UserPromptSubmit` event, intercepts commands like `git status`, `npm test`,
+or `docker ps` **before** they become an API call, runs them locally, and
+hands the result back to you — in the original colors, with a single dimmed
+footer line acknowledging the save. The model is never invoked. Zero input
+tokens, zero output tokens. Everything conversational flows through to
+Claude untouched.
+
+Other AI tools (Codex, Cursor, Aider, Gemini, Continue) are supported via
+MCP, but the deepest, most invisible experience — the one that feels like
+you're just using Claude normally — is Claude Code.
 
 [![CI](https://github.com/oanhduong/token-ninja/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/oanhduong/token-ninja/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/token-ninja.svg?color=cb3837&logo=npm)](https://www.npmjs.com/package/token-ninja)
@@ -27,39 +33,36 @@ unchanged, uninterrupted.
 ---
 
 ```console
-# Inside your Claude Code session — just chat as usual. When you type a literal
-# command, the UserPromptSubmit hook routes it through token-ninja first. If a
-# high-confidence rule matches, the command runs locally and its output is
-# returned to you — the model is never invoked. Zero input tokens, zero output
-# tokens. Anything conversational flows through to Claude untouched.
+# Inside a Claude Code session — just chat as usual. The output appears
+# exactly as if you had typed the command in your terminal, keeping its
+# native colors. A single dimmed footer line reports the save. That's the
+# whole visual change. Conversational prompts flow through to Claude
+# unchanged.
 
 you › git status
-⚡ token-ninja handled locally (git-status) · saved ~424 tokens
-
 On branch main
 nothing to commit, working tree clean
+⚡ ninja · saved ~424 tokens · git-status
 
 you › git branch --show-current
-⚡ token-ninja handled locally (git-branch-list) · saved ~416 tokens
-
 main
+⚡ ninja · saved ~416 tokens · git-branch-list
 
 you › git log --oneline -10
-⚡ token-ninja handled locally (git-log-passthrough) · saved ~611 tokens
-
 f77f852 chore(main): release 0.3.0
 6932f36 feat(setup): auto-register ninja mcp with Gemini CLI
 1b323b2 fix(router): preserve ANSI colors when the hook short-circuits the model
 89394ec feat(hook): replace PreToolUse Bash hook with UserPromptSubmit
 …
+⚡ ninja · saved ~611 tokens · git-log-passthrough
 
 you › explain why this stack trace is blowing up in production
 # No match (conversational) — prompt flows to Claude unchanged.
 ```
 
-No prefix. No new commands to learn. Keep chatting with `claude`, `codex`,
-`cursor`, `aider`, `gemini`, `continue` the way you already do — token-ninja
-quietly handles the boring stuff and gets out of the way for everything else.
+No prefix. No new commands to learn. Keep chatting with Claude Code the
+way you already do — token-ninja quietly handles the boring stuff and
+gets out of the way for everything else.
 
 ---
 
@@ -142,33 +145,30 @@ skipped safely instead of failing the install.
 ## Quickstart
 
 **There's no new command to learn.** After `npm install -g token-ninja`,
-open your AI tool the way you always do and start chatting:
+open Claude Code and start chatting. Commands render with their native
+ANSI colors; the footer is dimmed so it recedes.
 
 ```console
 you › git status
-⚡ token-ninja handled locally (git-status) · saved ~424 tokens
-
 On branch main
 nothing to commit, working tree clean
+⚡ ninja · saved ~424 tokens · git-status
 
 you › npm test
-⚡ token-ninja handled locally (npm-run-known) · saved ~2,362 tokens
-
- Test Files  20 passed (20)
-      Tests  268 passed (268)
+ Test Files  21 passed (21)
+      Tests  312 passed (312)
    Duration  4.16s
+⚡ ninja · saved ~2,362 tokens · npm-run-known
 
 you › docker ps
-⚡ token-ninja handled locally (docker-ps) · saved ~452 tokens
-
 CONTAINER ID   IMAGE         STATUS         NAMES
 a7f3c9e21b4d   postgres:16   Up 2 hours     db
 51e2d7f0a8c6   redis:7       Up 2 hours     cache
+⚡ ninja · saved ~452 tokens · docker-ps
 
 you › git diff
-⚡ token-ninja handled locally (git-diff) · saved ~402 tokens
-
 (no changes)
+⚡ ninja · saved ~402 tokens · git-diff
 
 you › why is my React state not updating when I click the button?
 # No match (conversational) — token-ninja passes through. The model answers normally.
@@ -225,49 +225,84 @@ dangerous command past the classifier.
 
 ## Features
 
-- **Hundreds of built-in rules** across dozens of tool domains — git, GitHub
-  CLI, npm, pnpm, yarn, bun, cargo, go, rust, java, kotlin, python, ruby, php,
-  docker, kubernetes, database, network, filesystem, archive, process
-  management, test runners, linters, text processing, build tools, editors,
-  shell utilities, system info, **cloud CLIs (AWS, Azure, gcloud, Vercel,
-  Netlify, Heroku, Fly, Railway, doctl)**, **IaC (Terraform, Ansible, Vagrant,
-  Pulumi, Packer, CDK)**, **bundlers (Vite, Turbo, esbuild, Parcel, Rollup,
-  Webpack, Rspack, tsup, Nx)**, **Deno / Elixir / Dart / Flutter**, **process
-  supervisors (pm2, systemctl --user, journalctl, overmind)**, **env managers
-  (direnv, asdf, mise, pyenv, rbenv, nix, conda)**, **distributed systems
-  (consul, etcd, zookeeper, NATS, Kafka, RabbitMQ)**, and natural-language
-  mappings. Run `ninja rules list` to see everything loaded.
+- **Claude-Code-native UX**: the `UserPromptSubmit` hook fires before your
+  prompt becomes an API call. On a confident match the hook short-circuits
+  the model and hands back the captured output in its **original ANSI
+  colors**, followed by a single dimmed footer line (`⚡ ninja · saved ~N
+  tokens · rule-id`). No banner, no prefix, no new commands — the
+  interaction looks exactly like you ran the command in your terminal.
+- **Huge built-in rule set**: **736 rules across 46 tool domains** covering
+  thousands of real commands — git (+ plumbing), GitHub CLI, npm, pnpm,
+  yarn, bun, cargo, go, rust, java, kotlin, python, ruby, php, docker,
+  kubernetes, database, network, filesystem, archive, process management,
+  test runners, linters, text processing, build tools (make, just, task,
+  mage, bazel, buck2, cmake, ninja, meson), **modern CLI (ripgrep, fd, bat,
+  eza, jq, yq, fzf, delta, hyperfine, tldr, btop, glow)**, editors (VS
+  Code, Cursor, Nvim, JetBrains, Helix, Zed), system info, **cloud CLIs
+  (AWS, Azure, gcloud, Vercel, Netlify, Heroku, Fly, Railway, doctl)**,
+  **IaC (Terraform, Ansible, Vagrant, Pulumi, Packer, CDK)**, **bundlers
+  (Vite, Turbo, esbuild, Parcel, Rollup, Webpack, Rspack, tsup, Nx)**,
+  **container tools (docker, podman, nerdctl, buildah, skopeo, crane,
+  dive, trivy, cosign, grype, syft)**, **Kubernetes ecosystem (kubectl,
+  kubectx/kubens, k9s, kind, minikube, k3d, colima, stern, velero,
+  kubeseal)**, **gitops (argocd, flux, skaffold, tilt, fastlane,
+  pre-commit)**, **helm + kustomize + helmfile**, **secrets / infra
+  (vault, nomad, packer, sops, age, 1password, bitwarden)**, Deno, Elixir,
+  Dart/Flutter, process supervisors, env managers, distributed systems,
+  and natural-language mappings. Run `ninja rules list` to see everything
+  loaded.
 - **Fast**: ~19 µs per classification, ~10 µs per safety check (warm JIT).
 - **Safe by construction**: layered deny-list blocks `rm -rf /`, `sudo`,
-  `git push --force`, `DROP TABLE`, `curl | sh`, `dd if=`, `mkfs`, … including
-  homoglyph, NFKC, chained, and base64-decoded evasion.
+  `git push --force`, `DROP TABLE`, `curl | sh`, `dd if=`, `mkfs`, …
+  including homoglyph, NFKC, chained, and base64-decoded evasion. Safety
+  is validated **twice**: once on the raw prompt and once on the expanded
+  command.
+- **Battle-tested**: 312 tests across 21 files covering classifier edge
+  cases, safety bypasses, conversational look-alikes, hook safeguards, and
+  ≥99% rule coverage over 1090 real-world fixture commands. v8 coverage
+  holds at 90%+ lines / 95%+ functions on all router/safety/rules code.
 - **Zero-setup**: `npm install -g` is literally the whole install. A
-  postinstall hook registers token-ninja as an MCP server in every AI client
-  it can detect; `ninja uninstall` reverses it.
-- **Transparent UX**: nothing changes about how you use your AI tool. The
-  only thing you notice is a small "⚡ handled by token-ninja" line when a
-  deterministic command gets answered for free.
-- **MCP-native**: exposes `maybe_execute_locally` over stdio so AI agents
-  consult the router *before* generating tokens.
+  postinstall hook registers the `UserPromptSubmit` hook in Claude Code
+  *and* the MCP server in every other AI client it detects. `ninja
+  uninstall` reverses it.
+- **MCP-native**: exposes `maybe_execute_locally` over stdio so agents
+  (Codex, Cursor, Aider, Gemini, Continue, any MCP client) can consult the
+  router *before* generating tokens.
 - **Pluggable**: drop a `.yaml` into `~/.config/token-ninja/rules/` to add
   your own patterns. User rules override builtins by id.
 - **Telemetry built in**: `ninja stats` shows hit rate, top rules, and an
   estimate of the tokens you've saved to date.
 - **Dry-run friendly**: `ninja rules test "…"` shows which rule would fire
   for any input, without executing anything.
+- **Escape hatches**: prefix a prompt with `?`, `/raw`, or `/claude` to
+  bypass the hook for that message. Or set
+  `intercept_user_prompts: false` in `~/.config/token-ninja/config.yaml`
+  to disable interception globally while keeping the MCP integration
+  active.
 
 ## Supported AI tools
 
-Auto-registered by `ninja setup` out of the box:
+**First-class (zero-token interception):**
 
-| Tool            | Config file token-ninja writes to                                      |
-| --------------- | ---------------------------------------------------------------------- |
-| Claude Code     | `~/.claude.json`                                                       |
-| Cursor          | `~/.cursor/mcp.json`                                                   |
+| Tool        | Integration                                                                              |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| Claude Code | `UserPromptSubmit` hook in `~/.claude/settings.json` **+** MCP in `~/.claude.json` |
+
+The hook is the headline feature. It sees every user prompt before it
+becomes an API call and can short-circuit the model entirely — which is
+why Claude Code is where you'll see the biggest token savings.
+
+**MCP-supported (agent opts in by calling the tool):**
+
+| Tool            | Integration                                                                          |
+| --------------- | ------------------------------------------------------------------------------------ |
+| Cursor          | `~/.cursor/mcp.json`                                                                 |
 | Claude Desktop  | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS), `%APPDATA%\Claude\…` (Windows), `$XDG_CONFIG_HOME/Claude/…` (Linux) |
+| Codex / Aider / Gemini / Continue | Register `ninja mcp` as a stdio MCP server; `ninja setup` auto-detects what's installed. |
 
-Any other MCP-capable client works too — point it at `ninja mcp` and you're
-in. Installed a new AI tool later? Re-run `ninja setup`; it's idempotent.
+Any other MCP-capable client works too — point it at `ninja mcp` and
+you're in. Installed a new AI tool later? Re-run `ninja setup`; it's
+idempotent.
 
 ## Write your own rules
 
@@ -309,8 +344,8 @@ rules:
     safety: write-confined
 ```
 
-See [`src/rules/builtin/*.yaml`](src/rules/builtin) for **472 production-grade
-examples**.
+See [`src/rules/builtin/*.yaml`](src/rules/builtin) for **736 production-grade
+examples across 46 domains**.
 
 | Match type | When to use                                                        |
 | ---------- | ------------------------------------------------------------------ |

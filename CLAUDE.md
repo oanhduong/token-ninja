@@ -10,29 +10,36 @@ coding assistant and runs the deterministic ones locally — zero LLM calls.
 Anything it doesn't confidently recognize falls back to the user's AI tool
 (Claude, Codex, Cursor, Aider, Gemini, Continue).
 
-- 472 built-in rules across 29 tool domains
-- Classifier hot path: ~37µs/call; safety validator: ~4µs/call
-- 198 tests, 89.5% line coverage enforced on `src/router/**`,
-  `src/safety/**`, `src/rules/**`
+- 736 built-in rules across 46 tool domains
+- Classifier hot path: ~19 µs/call; safety validator: ~10 µs/call (warm JIT)
+- 312 tests across 21 test files; 90.67% lines / 84.61% branches /
+  95.45% functions (v8 coverage over `src/router/**`, `src/safety/**`,
+  `src/rules/**`; thresholds enforced at 88 / 82 / 88 / 95)
 
 ## Source layout
 
 ```
 src/
-  cli.ts                     # commander entry; subcommands: mcp, init, stats, shim, rules
+  cli.ts                     # commander entry; subcommands: mcp, route, setup, uninstall, init, stats, shim, rules
   router/
-    index.ts                 # runRouter(): safety → classify → safety (again) → exec
+    index.ts                 # runRouter(): safety → classify → safety (again) → exec-or-fallback
+    route-once.ts            # one-shot classify+exec used by the Claude Code UserPromptSubmit hook (no AI fallback)
     classifier.ts            # exact → prefix → regex → nl matching; template expansion
     executor.ts              # execa wrapper (shell:true, captures + streams)
     fallback.ts              # hand off to user's AI tool
   rules/
     loader.ts                # loads builtin/*.yaml + ~/.config/token-ninja/rules/*.yaml
     types.ts                 # Rule / MatchSpec / ActionSpec
-    builtin/*.yaml           # 472 rules, grouped by domain
+    builtin/*.yaml           # 632 rules, grouped by domain (39 files)
   safety/
     denylist.ts              # DENY_PATTERNS regex list (rm -rf, sudo, curl|sh, etc.)
     validator.ts             # pipeline split + NFKC + homoglyph strip, then match
-  adapters/                  # per-AI-tool metadata + shim generator
+  adapters/                  # per-AI-tool metadata + shim generator (claude-code, codex, cursor, aider, gemini, continue, generic)
+  setup/
+    index.ts                 # orchestrates `ninja setup`: shell shim + MCP register + hook install
+    shell-install.ts         # writes managed block into ~/.bashrc / ~/.zshrc
+    mcp-install.ts           # registers ninja mcp with Claude Code, Cursor, Claude Desktop, Gemini CLI
+    hook-install.ts          # installs Claude Code UserPromptSubmit hook
   mcp/server.ts              # stdio MCP server exposing tool: maybe_execute_locally
   telemetry/stats.ts         # hit/miss counters, tokens-saved estimate
   config/user-config.ts      # ~/.config/token-ninja/config.yaml
@@ -40,7 +47,9 @@ src/
     shell-parse.ts           # splitPipelineSegments, tokenize, normalizeNl
     repo-detect.ts           # detect markers (package.json, Cargo.toml, …) and PMs
     logger.ts                # ANSI-colored stderr
-tests/                       # 14 test files, ~200 tests, vitest + v8 coverage
+hooks/
+  claude-code-user-prompt.cjs # shipped hook: reads a prompt, calls `ninja route`, short-circuits the model on hit
+tests/                       # 20 test files, 268 tests, vitest + v8 coverage
   fixtures/real-commands.txt # ≥85% of these must classify (rules-coverage.test.ts)
 ```
 
@@ -49,7 +58,7 @@ tests/                       # 14 test files, ~200 tests, vitest + v8 coverage
 ```bash
 npm run build            # tsc + copy YAML rules to dist/rules/builtin/
 npm run dev              # tsc -w
-npm test                 # vitest run (all 198 tests)
+npm test                 # vitest run (all 268 tests)
 npm run test:watch
 npm run test:coverage    # v8, thresholds: 85% lines, 80% branches, 95% functions
 npm run lint             # eslint flat config
