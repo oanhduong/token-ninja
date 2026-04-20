@@ -17,13 +17,13 @@
   ],
   "license": "MIT",
   "author": "token-ninja contributors",
-  "homepage": "https://github.com/token-ninja/token-ninja#readme",
+  "homepage": "https://github.com/oanhduong/token-ninja#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/token-ninja/token-ninja.git"
+    "url": "https://github.com/oanhduong/token-ninja.git"
   },
   "bugs": {
-    "url": "https://github.com/token-ninja/token-ninja/issues"
+    "url": "https://github.com/oanhduong/token-ninja/issues"
   },
   "type": "module",
   "main": "dist/cli.js",
