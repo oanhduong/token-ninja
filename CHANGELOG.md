@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
+## [0.4.0](https://github.com/oanhduong/token-ninja/compare/v0.3.0...v0.4.0) (2026-04-20)
+
+
+### Features
+
+* **hook:** output-first UX with dimmed savings footer ([d9b039d](https://github.com/oanhduong/token-ninja/commit/d9b039d5a75843a59ffa57ae3b7e94df49d1c0e4))
+* **rules:** expand coverage to 736 rules across 46 domains ([e10677e](https://github.com/oanhduong/token-ninja/commit/e10677e6b1d3f6e95bbe76d3459769b4157c3994))
+
+
+### Documentation
+
+* **readme:** lead with Claude Code-first story and new output-first UX ([63da530](https://github.com/oanhduong/token-ninja/commit/63da530adc592833be829d04cc6db7aaca55503d))
+* **readme:** update in-session examples to match the real hook output ([5ffd21b](https://github.com/oanhduong/token-ninja/commit/5ffd21b048da7d982b853709147beafe6dc63191))
+
 ## [0.3.0](https://github.com/oanhduong/token-ninja/compare/v0.2.0...v0.3.0) (2026-04-19)
 
 
