@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
-import type { LoadedRules, PrefixEntry, Rule, RuleFile } from "./types.js";
+import type { LoadedRules, PrefixEntry, RegexEntry, Rule, RuleFile } from "./types.js";
 import { classify } from "../router/classifier.js";
 import { logger } from "../utils/logger.js";
 
@@ -57,6 +57,13 @@ let cache: LoadedRules | null = null;
 export async function loadRules(): Promise<LoadedRules> {
   if (cache) return cache;
   const builtin = await loadDir(BUILTIN_DIR);
+  if (builtin.length === 0) {
+    logger.warn(
+      `no built-in rules loaded from ${BUILTIN_DIR}\n` +
+        `  hint: run \`npm run build\` to populate dist/rules/builtin/, ` +
+        `then re-run. Without rules, every command falls back to the AI tool.`
+    );
+  }
   const user = await loadDir(userRulesDir());
   const all = [...builtin, ...user];
 
@@ -77,6 +84,7 @@ export async function loadRules(): Promise<LoadedRules> {
   const prefixRules: Rule[] = [];
   const prefixByFirstWord = new Map<string, PrefixEntry[]>();
   const regexRules: Rule[] = [];
+  const regexRulesCompiled: RegexEntry[] = [];
   const nlRules: Rule[] = [];
 
   for (const r of rules) {
@@ -103,9 +111,24 @@ export async function loadRules(): Promise<LoadedRules> {
           prefixByFirstWord.set(head, bucket);
         }
         break;
-      case "regex":
+      case "regex": {
         regexRules.push(r);
+        const flags = r.match.flags ?? "";
+        const compiled: RegExp[] = [];
+        for (const p of r.match.patterns) {
+          try {
+            compiled.push(new RegExp(p, flags));
+          } catch (err) {
+            logger.warn(
+              `rule "${r.id}": invalid regex /${p}/${flags} — skipped (${(err as Error).message})`
+            );
+          }
+        }
+        if (compiled.length > 0) {
+          regexRulesCompiled.push({ rule: r, compiled });
+        }
         break;
+      }
       case "nl":
         nlRules.push(r);
         break;
@@ -119,6 +142,7 @@ export async function loadRules(): Promise<LoadedRules> {
     prefixRules,
     prefixByFirstWord,
     regexRules,
+    regexRulesCompiled,
     nlRules,
   };
   return cache;

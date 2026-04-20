@@ -10,7 +10,7 @@ coding assistant and runs the deterministic ones locally — zero LLM calls.
 Anything it doesn't confidently recognize falls back to the user's AI tool
 (Claude, Codex, Cursor, Aider, Gemini, Continue).
 
-- 736 built-in rules across 46 tool domains
+- 765 built-in rules across 46 tool domains
 - Classifier hot path: ~19 µs/call; safety validator: ~10 µs/call (warm JIT)
 - 312 tests across 21 test files; 90.67% lines / 84.61% branches /
   95.45% functions (v8 coverage over `src/router/**`, `src/safety/**`,
@@ -20,7 +20,9 @@ Anything it doesn't confidently recognize falls back to the user's AI tool
 
 ```
 src/
-  cli.ts                     # commander entry; subcommands: mcp, route, setup, uninstall, init, stats, shim, rules
+  cli.ts                     # commander entry; subcommands: mcp, route, setup, uninstall, init, stats, doctor, shim, rules
+  doctor/
+    index.ts                 # `ninja doctor` health check (config, rules, shim, MCP, hook, stats)
   router/
     index.ts                 # runRouter(): safety → classify → safety (again) → exec-or-fallback
     route-once.ts            # one-shot classify+exec used by the Claude Code UserPromptSubmit hook (no AI fallback)
@@ -30,7 +32,7 @@ src/
   rules/
     loader.ts                # loads builtin/*.yaml + ~/.config/token-ninja/rules/*.yaml
     types.ts                 # Rule / MatchSpec / ActionSpec
-    builtin/*.yaml           # 632 rules, grouped by domain (39 files)
+    builtin/*.yaml           # 765 rules, grouped by domain (46 files)
   safety/
     denylist.ts              # DENY_PATTERNS regex list (rm -rf, sudo, curl|sh, etc.)
     validator.ts             # pipeline split + NFKC + homoglyph strip, then match
@@ -116,10 +118,14 @@ npm run typecheck        # tsc --noEmit
   without executing.
 - `npx tsx src/cli.ts --dry-run "your command"` — full router, prints what
   would run.
+- `npx tsx src/cli.ts doctor` — health check if something looks wrong.
 - Benchmarks live in `tests/benchmark.test.ts`. If you touch the classifier
   or safety, re-run them locally: thresholds are generous (800ms / 10k
   classify, 100ms / 10k validate) but a regression past those usually
   means a new quadratic path.
+- Keep doc counts honest: `npm run rule-stats:sync` rewrites README /
+  CONTRIBUTING / CLAUDE.md. `npm run rule-stats:check` exits 1 when stale
+  (wire into CI if you want enforcement).
 
 ## Release checklist
 

@@ -142,5 +142,98 @@ rules:
         - "supervisorctl pid"
         - "supervisorctl version"
         - "supervisorctl avail"
+        - "supervisorctl reread"
+        - "supervisorctl maintail"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: supervisorctl-status-one
+    match:
+      type: regex
+      patterns:
+        - "^supervisorctl\\s+status\\s+(\\S+)$"
+        - "^supervisorctl\\s+tail\\s+(-f\\s+)?(\\S+)$"
+        - "^supervisorctl\\s+pid\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: supervisorctl-lifecycle
+    match:
+      type: regex
+      patterns:
+        - "^supervisorctl\\s+(start|stop|restart|update|signal\\s+\\S+)\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: write-confined
+
+  # ── System V / OpenRC ──────────────────────────────────────────────
+  - id: service-status
+    match:
+      type: regex
+      patterns:
+        - "^service\\s+(\\S+)\\s+status$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: rc-status
+    match:
+      type: exact
+      patterns:
+        - "rc-status"
+        - "rc-status --list"
+        - "rc-update"
+        - "rc-update show"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: chkconfig-list
+    match:
+      type: exact
+      patterns:
+        - "chkconfig --list"
+        - "chkconfig"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── systemd: a few more read-only introspection patterns ───────────
+  - id: systemctl-status-one
+    match:
+      type: regex
+      patterns:
+        - "^systemctl\\s+(status|is-active|is-enabled|is-failed|cat|show)\\s+(\\S+)$"
+        - "^systemctl\\s+--user\\s+(status|is-active|is-enabled|cat|show)\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: systemd-analyze
+    match:
+      type: exact
+      patterns:
+        - "systemd-analyze"
+        - "systemd-analyze blame"
+        - "systemd-analyze critical-chain"
+        - "systemd-analyze time"
+        - "systemd-analyze plot"
+        - "systemd-analyze security"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── launchctl service control (macOS) ──────────────────────────────
+  - id: launchctl-list-one
+    match:
+      type: regex
+      patterns:
+        - "^launchctl\\s+list\\s+(\\S+)$"
+        - "^launchctl\\s+print\\s+(gui|user|system)/\\d+/\\S+$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  # ── journalctl range queries ───────────────────────────────────────
+  - id: journalctl-scoped
+    match:
+      type: regex
+      patterns:
+        - "^journalctl\\s+-u\\s+(\\S+)(?:\\s+.*)?$"
+        - "^journalctl\\s+--user-unit\\s+(\\S+)(?:\\s+.*)?$"
+        - "^journalctl\\s+--since\\s+[\"']?([^\"']+)[\"']?(?:\\s+.*)?$"
+    action: { type: shell, command: "{{input}}" }
     safety: read-only

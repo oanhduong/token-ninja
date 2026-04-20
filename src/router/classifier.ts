@@ -52,17 +52,10 @@ export async function classify(
       };
   }
 
-  // 3. regex
-  for (const rule of rules.regexRules) {
-    if (rule.match.type !== "regex") continue;
-    const flags = rule.match.flags ?? "";
-    for (const p of rule.match.patterns) {
-      let re: RegExp;
-      try {
-        re = new RegExp(p, flags);
-      } catch {
-        continue;
-      }
+  // 3. regex — patterns are pre-compiled by the loader, so the hot path here
+  // only does match() calls, no RegExp construction.
+  for (const { rule, compiled } of rules.regexRulesCompiled) {
+    for (const re of compiled) {
       const m = input.match(re);
       if (m) {
         const args = interpolateMatch(m);

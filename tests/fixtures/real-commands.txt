@@ -1178,3 +1178,58 @@ locale
 locale -a
 jobs
 jobs -l
+
+# ── editors (expanded) ───────────────────────────────────────────────
+code --install-extension dbaeumer.vscode-eslint
+code --uninstall-extension dbaeumer.vscode-eslint
+code --diff src/a.ts src/b.ts
+code --goto src/cli.ts:42
+code --status
+code --locate-shell-integration-path zsh
+cursor --install-extension esbenp.prettier-vscode
+nvim --headless +qa
+hx --health
+hx --health all
+
+# ── network (expanded) ───────────────────────────────────────────────
+nc -zv example.com 443
+ncat -z example.com 80
+resolvectl status
+resolvectl statistics
+resolvectl query github.com
+systemd-resolve --status
+getent hosts example.com
+getent passwd root
+curl -v https://example.com
+curl -vI https://example.com
+drill github.com
+ip -s link
+ip neigh
+ip rule
+bridge link
+
+# ── process-mgmt (expanded) ──────────────────────────────────────────
+pwdx 1
+lsof -p 1
+fuser /var/log/syslog
+systemd-cgls
+systemd-cgtop -b -n 1
+pidstat 1 1
+pidstat -u
+
+# ── process-supervisors (expanded) ───────────────────────────────────
+supervisorctl status myapp
+supervisorctl start worker
+supervisorctl restart api
+service nginx status
+rc-status
+rc-status --list
+chkconfig --list
+systemctl status nginx
+systemctl is-active sshd
+systemctl --user status app
+systemd-analyze blame
+systemd-analyze critical-chain
+journalctl -u nginx
+journalctl --user-unit app
+launchctl list com.apple.Finder

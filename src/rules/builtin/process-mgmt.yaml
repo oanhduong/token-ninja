@@ -71,3 +71,56 @@ rules:
       patterns: ["renice"]
     action: { type: shell, command: "renice", args_passthrough: true }
     safety: write-confined
+
+  # Per-process introspection — pwdx, lsof -p, fuser.
+  - id: pwdx
+    match:
+      type: prefix
+      patterns: ["pwdx"]
+    action: { type: shell, command: "pwdx", args_passthrough: true }
+    safety: read-only
+
+  - id: lsof-process
+    match:
+      type: regex
+      patterns:
+        - "^lsof\\s+-p\\s+(\\d+)$"
+        - "^lsof\\s+-c\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: fuser
+    match:
+      type: prefix
+      patterns: ["fuser"]
+    action: { type: shell, command: "fuser", args_passthrough: true }
+    safety: read-only
+
+  # /proc-style status queries.
+  - id: proc-status
+    match:
+      type: regex
+      patterns:
+        - "^cat\\s+/proc/(\\d+)/(status|cmdline|environ|limits|cgroup|stat)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  # cgroups + systemd-cgls are read-only introspection.
+  - id: systemd-cgls
+    match:
+      type: exact
+      patterns:
+        - "systemd-cgls"
+        - "systemd-cgls --no-pager"
+        - "systemd-cgtop"
+        - "systemd-cgtop -b -n 1"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # Per-process CPU/IO sampler — pidstat isn't claimed by system-info.
+  - id: pidstat
+    match:
+      type: prefix
+      patterns: ["pidstat"]
+    action: { type: shell, command: "pidstat", args_passthrough: true }
+    safety: read-only
