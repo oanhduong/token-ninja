@@ -8,6 +8,7 @@ import { runSetup, runUninstall } from "./setup/index.js";
 import { listRules, testRule } from "./rules/loader.js";
 import { printStats } from "./telemetry/stats.js";
 import { generateShim } from "./adapters/index.js";
+import { printDoctor } from "./doctor/index.js";
 import { logger } from "./utils/logger.js";
 
 const program = new Command();
@@ -125,6 +126,15 @@ program
   .option("--json", "machine-readable output")
   .action(async (opts) => {
     await printStats(opts);
+  });
+
+program
+  .command("doctor")
+  .description("Diagnose token-ninja's install: rules, shell shim, MCP entries, Claude hook, stats")
+  .option("--json", "machine-readable output")
+  .action(async (opts: { json?: boolean }) => {
+    const code = await printDoctor({ json: opts.json });
+    process.exit(code);
   });
 
 program
