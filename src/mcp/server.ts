@@ -37,7 +37,7 @@ const TOOL_DEFINITION = {
 
 export async function startMcpServer(): Promise<void> {
   const server = new Server(
-    { name: "token-ninja", version: "0.4.1" }, // x-release-please-version
+    { name: "token-ninja", version: "0.5.0" }, // x-release-please-version
     { capabilities: { tools: {} } }
   );
 
