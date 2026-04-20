@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { logger } from "../utils/logger.js";
 
 export interface Config {
   default_ai_tool?: string;
@@ -45,11 +46,24 @@ let cached: Config | null = null;
 
 export async function loadConfig(): Promise<Config> {
   if (cached) return cached;
+  const path = configPath();
+  let raw: string;
   try {
-    const raw = await readFile(configPath(), "utf8");
+    raw = await readFile(path, "utf8");
+  } catch {
+    // File missing (common — defaults are fine). Don't warn.
+    cached = { ...DEFAULT_CONFIG };
+    return cached;
+  }
+  try {
     const parsed = (parseYaml(raw) as Config | null) ?? {};
     cached = { ...DEFAULT_CONFIG, ...parsed, stats: { ...DEFAULT_CONFIG.stats, ...parsed.stats } };
-  } catch {
+  } catch (err) {
+    logger.warn(
+      `could not parse ${path}: ${(err as Error).message}\n` +
+        `  hint: fix the YAML or delete the file to restore defaults, ` +
+        `then run: ninja doctor`
+    );
     cached = { ...DEFAULT_CONFIG };
   }
   return cached;
