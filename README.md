@@ -83,6 +83,7 @@ gets out of the way for everything else.
 - [Benchmarks](#benchmarks)
 - [Development](#development)
 - [FAQ](#faq)
+- [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -231,7 +232,7 @@ dangerous command past the classifier.
   colors**, followed by a single dimmed footer line (`⚡ ninja · saved ~N
   tokens · rule-id`). No banner, no prefix, no new commands — the
   interaction looks exactly like you ran the command in your terminal.
-- **Huge built-in rule set**: **736 rules across 46 tool domains** covering
+- **Huge built-in rule set**: **765 rules across 46 tool domains** covering
   thousands of real commands — git (+ plumbing), GitHub CLI, npm, pnpm,
   yarn, bun, cargo, go, rust, java, kotlin, python, ruby, php, docker,
   kubernetes, database, network, filesystem, archive, process management,
@@ -306,7 +307,21 @@ idempotent.
 
 ## Write your own rules
 
-Rules are plain YAML. Drop a file into `~/.config/token-ninja/rules/*.yaml`:
+Rules are plain YAML. They live in `~/.config/token-ninja/rules/*.yaml`
+(or whatever `custom_rules_dir` points at — `ninja setup` pre-creates the
+directory for you). Rules with the same `id` as a built-in win, so you can
+also shadow or replace a built-in by redefining it.
+
+### 60-second walkthrough
+
+**1. Create a file:**
+
+```bash
+mkdir -p ~/.config/token-ninja/rules
+$EDITOR ~/.config/token-ninja/rules/myteam.yaml
+```
+
+**2. Add one or more rules:**
 
 ```yaml
 domain: myteam
@@ -344,7 +359,28 @@ rules:
     safety: write-confined
 ```
 
-See [`src/rules/builtin/*.yaml`](src/rules/builtin) for **736 production-grade
+**3. Dry-run to confirm the classifier picks your rule:**
+
+```bash
+ninja rules test "deploy staging"
+# matched rule : deploy-staging
+# domain       : myteam
+# matched via  : exact
+# safety tier  : write-network
+# would run    : ./scripts/deploy.sh staging
+```
+
+**4. Check the health of your install:**
+
+```bash
+ninja doctor
+# reports rule count, AI adapters detected, shim/MCP/hook status, etc.
+```
+
+That's it — the next time Claude Code sees `deploy staging` it runs locally
+and never hits the model.
+
+See [`src/rules/builtin/*.yaml`](src/rules/builtin) for **765 production-grade
 examples across 46 domains**.
 
 | Match type | When to use                                                        |
@@ -475,6 +511,69 @@ Each call the model makes looks like:
 // AI should handle it
 { "handled": false, "reason": "no_match" }
 ```
+
+### Cookbook: using ninja from a custom MCP client
+
+If you're writing your own Claude/agent harness, register `ninja mcp` like
+any other stdio server and call `maybe_execute_locally` on every command
+the model wants to run. Below is a minimal recipe using the official
+Model Context Protocol Node SDK (the same one ninja itself links against).
+
+```ts
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+// 1. Spawn `ninja mcp` as a stdio MCP server and connect to it.
+const transport = new StdioClientTransport({ command: "ninja", args: ["mcp"] });
+const client = new Client({ name: "my-harness", version: "0.1.0" }, { capabilities: {} });
+await client.connect(transport);
+
+// 2. Before executing any command the LLM asked for, ask ninja first.
+async function tryLocal(command: string): Promise<
+  | { handled: true; stdout: string; stderr: string; exitCode: number; ruleId: string }
+  | { handled: false; reason: string }
+> {
+  const res = await client.callTool({
+    name: "maybe_execute_locally",
+    arguments: { command },
+  });
+  const text = (res.content as Array<{ type: string; text: string }>)
+    .filter((c) => c.type === "text")
+    .map((c) => c.text)
+    .join("");
+  const parsed = JSON.parse(text);
+  if (parsed.handled) {
+    return {
+      handled: true,
+      stdout: parsed.stdout,
+      stderr: parsed.stderr,
+      exitCode: parsed.exit_code,
+      ruleId: parsed.rule_id,
+    };
+  }
+  return { handled: false, reason: parsed.reason };
+}
+
+// 3. Wire it into your command loop.
+const result = await tryLocal("git status");
+if (result.handled) {
+  // Feed the captured output back to the model as a tool result. Do NOT
+  // re-run the command yourself — ninja already did.
+  console.log(result.stdout);
+} else {
+  // Fall back to your normal LLM+shell flow.
+}
+```
+
+Notes:
+
+- `maybe_execute_locally` never falls back to an AI tool — that's the
+  caller's job. It only returns `handled:true` or a `reason`.
+- Safety is validated twice inside ninja (raw input + resolved command), so
+  you can trust `handled:true` outputs without re-checking.
+- For programmatic usage without MCP at all, import `routeOnce` directly:
+  `import { routeOnce } from "token-ninja/dist/router/route-once.js"` and
+  call it like the stdio server does.
 
 ## Configuration
 
@@ -629,6 +728,21 @@ length + captured output + a 400-token system-prompt overhead. See
 Yes. The router and MCP server run anywhere Node 20+ runs; the auto-setup
 handles the Windows Claude Desktop config path (`%APPDATA%\Claude\…`) out
 of the box.
+
+## Troubleshooting
+
+Start with `ninja doctor` — it prints a health check of the config, rules,
+shell shim, MCP entries, Claude hook, and stats file, with a specific fix
+hint for every failure.
+
+```bash
+ninja doctor           # human-readable report
+ninja doctor --json    # machine-readable; exit 1 on problems
+```
+
+For longer explanations of common issues — hook not firing, stats not
+updating, a rule not matching, MCP unavailable, postinstall skipped, or
+safety false positives — see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
 
 ## Contributing
 

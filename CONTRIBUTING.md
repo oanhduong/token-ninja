@@ -11,7 +11,7 @@ Everything else (classifier tweaks, new adapters, MCP features) is welcome too.
 ## Getting started
 
 ```bash
-git clone https://github.com/token-ninja/token-ninja
+git clone https://github.com/oanhduong/token-ninja
 cd token-ninja
 npm install
 npm test
@@ -32,7 +32,7 @@ src/
   rules/
     loader.ts           # loads builtin/*.yaml + user rules, indexes by type
     types.ts            # Rule / MatchSpec / ActionSpec
-    builtin/*.yaml      # 472+ production rules across 29 domains
+    builtin/*.yaml      # 765 production rules across 46 domains
   safety/
     denylist.ts         # hard-deny regex patterns
     validator.ts        # pipeline split + homoglyph + NFKC normalization
@@ -73,6 +73,14 @@ Pick the right safety tier:
 Add at least one line to `tests/fixtures/real-commands.txt` that exercises
 the new rule. Run `npm test` — the rules-coverage suite enforces a ≥85 % hit
 rate and will tell you if your new fixture lines miss.
+
+Finally, keep the rule/domain counts in the docs honest:
+
+```bash
+npm run rule-stats          # print current counts
+npm run rule-stats:sync     # rewrite README/CONTRIBUTING/CLAUDE.md counts
+npm run rule-stats:check    # CI check: exit 1 if docs are stale
+```
 
 ## Adding a deny pattern
 
