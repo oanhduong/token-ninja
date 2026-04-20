@@ -47,6 +47,16 @@ export interface PrefixEntry {
   pattern: string;
 }
 
+export interface RegexEntry {
+  rule: Rule;
+  /**
+   * Patterns pre-compiled at load time so the classifier hot path iterates
+   * over `RegExp` objects directly. Invalid patterns are dropped (a warning
+   * is logged once by the loader) so `compiled` never contains `null`.
+   */
+  compiled: RegExp[];
+}
+
 export interface LoadedRules {
   rules: Rule[];
   byDomain: Map<string, Rule[]>;
@@ -54,6 +64,7 @@ export interface LoadedRules {
   prefixRules: Rule[];
   prefixByFirstWord: Map<string, PrefixEntry[]>;
   regexRules: Rule[];
+  regexRulesCompiled: RegexEntry[];
   nlRules: Rule[];
 }
 
