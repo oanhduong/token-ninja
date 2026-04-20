@@ -75,3 +75,62 @@ rules:
         - "cursor --list-extensions"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
+
+  # Extension install/uninstall — network-touching (writes to marketplace).
+  - id: vscode-ext-install
+    match:
+      type: regex
+      patterns:
+        - "^code\\s+--install-extension\\s+([\\w.\\-@/]+)$"
+        - "^code-insiders\\s+--install-extension\\s+([\\w.\\-@/]+)$"
+        - "^cursor\\s+--install-extension\\s+([\\w.\\-@/]+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  - id: vscode-ext-uninstall
+    match:
+      type: regex
+      patterns:
+        - "^code\\s+--uninstall-extension\\s+([\\w.\\-@/]+)$"
+        - "^code-insiders\\s+--uninstall-extension\\s+([\\w.\\-@/]+)$"
+        - "^cursor\\s+--uninstall-extension\\s+([\\w.\\-@/]+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: write-confined
+
+  # Diff and goto — non-interactive invocations open a new window/file but
+  # return immediately, so they're safe to shell out.
+  - id: vscode-diff
+    match:
+      type: regex
+      patterns:
+        - "^code\\s+--diff\\s+(\\S+)\\s+(\\S+)$"
+        - "^code-insiders\\s+--diff\\s+(\\S+)\\s+(\\S+)$"
+        - "^cursor\\s+--diff\\s+(\\S+)\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  - id: vscode-goto
+    match:
+      type: regex
+      patterns:
+        - "^code\\s+--goto\\s+(\\S+)$"
+        - "^code\\s+-g\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  # Editor config + runtime queries — e.g. `nvim --startuptime`, Helix health.
+  - id: editor-runtime-info
+    match:
+      type: exact
+      patterns:
+        - "nvim --startuptime /tmp/nvim-startup.log"
+        - "nvim --headless +qa"
+        - "hx --health"
+        - "hx --health all"
+        - "hx --tutor"
+        - "code --status"
+        - "code --locate-shell-integration-path bash"
+        - "code --locate-shell-integration-path zsh"
+        - "code --locate-shell-integration-path fish"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only

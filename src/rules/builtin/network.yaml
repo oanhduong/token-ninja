@@ -132,3 +132,101 @@ rules:
       patterns: ["^arp(\\s+-[an]+)?$"]
     action: { type: shell, command: "{{input}}" }
     safety: read-only
+
+  # nc / ncat — port scans and banner grabs (reads only, no payload sent).
+  - id: nc-port-check
+    match:
+      type: regex
+      patterns:
+        - "^nc\\s+-z(?:v)?\\s+(\\S+)\\s+(\\d+(?:-\\d+)?)$"
+        - "^ncat\\s+-z(?:v)?\\s+(\\S+)\\s+(\\d+(?:-\\d+)?)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  # Modern DNS / resolver inspectors.
+  - id: resolvectl-info
+    match:
+      type: exact
+      patterns:
+        - "resolvectl status"
+        - "resolvectl statistics"
+        - "resolvectl query"
+        - "resolvectl dns"
+        - "resolvectl domain"
+        - "systemd-resolve --status"
+        - "systemd-resolve --statistics"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: resolvectl-query
+    match:
+      type: regex
+      patterns:
+        - "^resolvectl\\s+(query|cache)\\s+(\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  # getent — queries NSS (hosts, passwd, group, services) locally.
+  - id: getent
+    match:
+      type: prefix
+      patterns: ["getent hosts", "getent passwd", "getent group", "getent services", "getent ahosts", "getent"]
+    action: { type: shell, command: "getent", args_passthrough: true }
+    safety: read-only
+
+  # curl verbose / trace for debugging.
+  - id: curl-verbose
+    match:
+      type: regex
+      patterns:
+        - "^curl\\s+-v\\s+(https?://\\S+)$"
+        - "^curl\\s+-sv\\s+(https?://\\S+)$"
+        - "^curl\\s+-vI\\s+(https?://\\S+)$"
+    action: { type: shell, command: "{{input}}" }
+    safety: write-network
+
+  # DNS secondary lookups.
+  - id: drill-delv
+    match:
+      type: prefix
+      patterns: ["drill", "delv"]
+    action: { type: shell, command: "{{input}}", args_passthrough: true }
+    safety: read-only
+
+  # IP neighbor / bridge / link counters.
+  - id: ip-extended
+    match:
+      type: exact
+      patterns:
+        - "ip -s link"
+        - "ip -s -s link"
+        - "ip neigh"
+        - "ip neigh show"
+        - "ip maddr"
+        - "ip rule"
+        - "ip tunnel"
+        - "bridge link"
+        - "bridge fdb"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # Interface info via alternative tools (macOS / BSD).
+  - id: networksetup
+    match:
+      type: exact
+      patterns:
+        - "networksetup -listallhardwareports"
+        - "networksetup -listallnetworkservices"
+        - "networksetup -getdnsservers Wi-Fi"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: ipconfig-macos
+    match:
+      type: exact
+      patterns:
+        - "ipconfig getifaddr en0"
+        - "ipconfig getifaddr en1"
+        - "ipconfig getpacket en0"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
