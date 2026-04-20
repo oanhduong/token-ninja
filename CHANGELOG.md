@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
+## [0.5.0](https://github.com/oanhduong/token-ninja/compare/v0.4.1...v0.5.0) (2026-04-20)
+
+
+### Features
+
+* **cli:** add `ninja doctor` health check command ([4b19b26](https://github.com/oanhduong/token-ninja/commit/4b19b26e5d6d2698604760e130b00957c4863b86))
+* **cli:** surface next-step hints on fallback and config errors ([d8c0b53](https://github.com/oanhduong/token-ninja/commit/d8c0b533adb5ce45001809835a31ff83cb2528a3))
+* **rules:** expand editors/network/process-mgmt/process-supervisors ([4459002](https://github.com/oanhduong/token-ninja/commit/4459002c681fdbd679633641c843ec8c10c0fd75))
+
+
+### Performance
+
+* **classifier:** pre-compile regex patterns at load time ([3621c87](https://github.com/oanhduong/token-ninja/commit/3621c8756ae772de8b3589c53438dc4761ab265b))
+
+
+### Documentation
+
+* user-rules walkthrough, TROUBLESHOOTING.md, MCP cookbook ([d483047](https://github.com/oanhduong/token-ninja/commit/d483047e7362a360eda98744563bb2f7b04f9dfa))
+
 ## [0.4.1](https://github.com/oanhduong/token-ninja/compare/v0.4.0...v0.4.1) (2026-04-20)
 
 
