@@ -49,6 +49,9 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "rule-stats": "node scripts/rule-stats.mjs",
+    "rule-stats:check": "node scripts/rule-stats.mjs --check",
+    "rule-stats:sync": "node scripts/rule-stats.mjs --sync",
     "postinstall": "node scripts/post-install.mjs",
     "prepublishOnly": "npm run build"
   },
