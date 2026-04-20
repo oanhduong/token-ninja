@@ -1,0 +1,186 @@
+domain: modern-cli
+# Fast, widely-used replacements for classic unix tools. All read-only: we can
+# capture their output safely and hand the colored result back verbatim.
+rules:
+  # ── ripgrep ─────────────────────────────────────────────────────────
+  - id: ripgrep-info
+    match:
+      type: exact
+      patterns:
+        - "rg --version"
+        - "rg -V"
+        - "rg --help"
+        - "rg --type-list"
+        - "rg --list-file-types"
+        - "rg --pcre2-version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: ripgrep-search
+    match:
+      type: prefix
+      patterns: ["rg "]
+    action: { type: shell, command: "rg --color=always", args_passthrough: true }
+    safety: read-only
+
+  # ── fd ──────────────────────────────────────────────────────────────
+  - id: fd-info
+    match:
+      type: exact
+      patterns: ["fd --version", "fd -V", "fd --help", "fdfind --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: fd-search
+    match:
+      type: prefix
+      patterns: ["fd ", "fdfind "]
+    action: { type: shell, command: "fd --color=always", args_passthrough: true }
+    safety: read-only
+
+  # ── bat ─────────────────────────────────────────────────────────────
+  - id: bat-info
+    match:
+      type: exact
+      patterns:
+        - "bat --version"
+        - "bat -V"
+        - "bat --list-themes"
+        - "bat --list-languages"
+        - "batcat --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: bat-read
+    match:
+      type: prefix
+      patterns: ["bat ", "batcat "]
+    action: { type: shell, command: "bat --color=always --paging=never", args_passthrough: true }
+    safety: read-only
+
+  # ── eza / exa ───────────────────────────────────────────────────────
+  - id: eza-info
+    match:
+      type: exact
+      patterns: ["eza --version", "exa --version", "eza --help", "exa --help"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: eza-listing
+    match:
+      type: prefix
+      patterns: ["eza ", "exa "]
+    action: { type: shell, command: "{{input}}", args_passthrough: true }
+    safety: read-only
+
+  # ── zoxide ──────────────────────────────────────────────────────────
+  - id: zoxide-info
+    match:
+      type: exact
+      patterns: ["zoxide --version", "zoxide query --list", "z --help"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── delta ───────────────────────────────────────────────────────────
+  - id: delta-info
+    match:
+      type: exact
+      patterns: ["delta --version", "delta --help", "delta --show-config"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── fzf ─────────────────────────────────────────────────────────────
+  - id: fzf-info
+    match:
+      type: exact
+      patterns: ["fzf --version", "fzf --help"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── jq ──────────────────────────────────────────────────────────────
+  - id: jq-info
+    match:
+      type: exact
+      patterns: ["jq --version", "jq -V", "jq --help"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # jq invoked via pipelines is routed through safety; bare `jq '…'` against
+  # a file is a passthrough that still respects the deny-list.
+  - id: jq-read-file
+    match:
+      type: regex
+      patterns:
+        - "^jq\\s+.+\\s+[\\w./\\-]+\\.json$"
+    action: { type: shell, command: "jq --color-output {{input}}" }
+    safety: read-only
+
+  # ── yq ──────────────────────────────────────────────────────────────
+  - id: yq-info
+    match:
+      type: exact
+      patterns: ["yq --version", "yq -V", "yq --help"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── hyperfine ───────────────────────────────────────────────────────
+  - id: hyperfine-info
+    match:
+      type: exact
+      patterns: ["hyperfine --version", "hyperfine --help"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── tldr ────────────────────────────────────────────────────────────
+  - id: tldr-info
+    match:
+      type: exact
+      patterns: ["tldr --version", "tldr -V", "tldr --help"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: tldr-lookup
+    match:
+      type: regex
+      patterns:
+        - "^tldr\\s+[\\w-]+$"
+    action: { type: shell, command: "tldr {{input}}" }
+    safety: read-only
+
+  # ── dust / duf / ncdu ───────────────────────────────────────────────
+  - id: dust-info
+    match:
+      type: exact
+      patterns: ["dust --version", "dust --help", "duf --version", "duf --help", "ncdu --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: duf-disk
+    match:
+      type: exact
+      patterns: ["duf", "duf -all", "duf --hide-mp"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── btop / btm / glances / fastfetch / neofetch ─────────────────────
+  - id: sysmon-info
+    match:
+      type: exact
+      patterns:
+        - "btop --version"
+        - "btm --version"
+        - "glances --version"
+        - "fastfetch --version"
+        - "neofetch --version"
+        - "neofetch"
+        - "fastfetch"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── glow / hexyl ────────────────────────────────────────────────────
+  - id: glow-info
+    match:
+      type: exact
+      patterns: ["glow --version", "glow -v", "hexyl --version", "hexyl -V"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only

@@ -1,0 +1,211 @@
+domain: git-extras
+# Additional git commands that aren't in git.yaml. Keep this file strictly
+# ADDITIVE — never re-declare exact patterns that git.yaml already owns, or
+# the loader's last-wins semantics will silently hijack them.
+rules:
+  - id: git-version
+    match:
+      type: exact
+      patterns:
+        - "git --version"
+        - "git version"
+        - "git -v"
+        - "git help"
+        - "git help -a"
+        - "git help -g"
+        - "git help log"
+        - "git help rebase"
+        - "git help merge"
+        - "git help stash"
+        - "git help commit"
+        - "git help diff"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-help-passthrough
+    match:
+      type: prefix
+      patterns: ["git help"]
+    action: { type: shell, command: "git help", args_passthrough: true }
+    safety: read-only
+
+  - id: git-config-read
+    match:
+      type: exact
+      patterns:
+        - "git config --get-all user.email"
+        - "git config --get-all user.name"
+        - "git config --global --list"
+        - "git config --global --list --show-origin"
+        - "git config --local --list"
+        - "git config --system --list"
+        - "git config --show-origin --list"
+        - "git config --show-scope --list"
+        - "git config --list --show-origin"
+        - "git config user.email"
+        - "git config user.name"
+        - "git config core.editor"
+        - "git config remote.origin.url"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-remote-info
+    match:
+      type: exact
+      patterns:
+        - "git remote show upstream"
+        - "git remote get-url origin"
+        - "git remote get-url upstream"
+        - "git ls-remote"
+        - "git ls-remote --heads"
+        - "git ls-remote --tags"
+        - "git ls-remote origin"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-branch-info-extra
+    match:
+      type: exact
+      patterns:
+        - "git branch --contains HEAD"
+        - "git branch --merged"
+        - "git branch --no-merged"
+        - "git branch --sort=-committerdate"
+        - "git branch --sort=committerdate"
+        - "git branch --format='%(refname:short)'"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-tag-info-extra
+    match:
+      type: exact
+      patterns:
+        - "git tag -n"
+        - "git tag -n1"
+        - "git tag -n5"
+        - "git tag --sort=-creatordate"
+        - "git tag --sort=creatordate"
+        - "git tag --contains HEAD"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-plumbing
+    match:
+      type: exact
+      patterns:
+        - "git rev-parse HEAD"
+        - "git rev-parse --short HEAD"
+        - "git rev-parse --abbrev-ref HEAD"
+        - "git rev-parse --show-toplevel"
+        - "git rev-parse --git-dir"
+        - "git rev-parse --is-inside-work-tree"
+        - "git rev-parse --is-inside-git-dir"
+        - "git rev-parse --is-bare-repository"
+        - "git rev-parse --show-prefix"
+        - "git rev-parse --show-cdup"
+        - "git rev-list --count HEAD"
+        - "git rev-list --count main..HEAD"
+        - "git rev-list --count master..HEAD"
+        - "git rev-list --all --count"
+        - "git log --oneline --all --branches"
+        - "git for-each-ref"
+        - "git for-each-ref --sort=-committerdate"
+        - "git for-each-ref refs/heads"
+        - "git for-each-ref refs/tags"
+        - "git for-each-ref refs/remotes"
+        - "git show-branch"
+        - "git show-branch --all"
+        - "git check-ref-format refs/heads/main"
+        - "git symbolic-ref HEAD"
+        - "git symbolic-ref --short HEAD"
+        - "git cat-file -t HEAD"
+        - "git cat-file -p HEAD"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-grep
+    match:
+      type: prefix
+      patterns: ["git grep"]
+    action: { type: shell, command: "git grep --color=always", args_passthrough: true }
+    safety: read-only
+
+  - id: git-blame-passthrough-extra
+    match:
+      type: prefix
+      patterns: ["git blame"]
+    action: { type: shell, command: "git blame", args_passthrough: true }
+    safety: read-only
+
+  - id: git-log-range
+    match:
+      type: exact
+      patterns:
+        - "git log HEAD..origin/main"
+        - "git log origin/main..HEAD"
+        - "git log @{upstream}..HEAD"
+        - "git log HEAD..@{upstream}"
+        - "git log --author=@me"
+        - "git log --since=1.day"
+        - "git log --since=1.week"
+        - "git log --since=1.month"
+        - "git log --since yesterday"
+        - "git log --since today"
+        - "git log --merges"
+        - "git log --no-merges"
+        - "git log --first-parent"
+        - "git log --follow"
+        - "git log --name-only"
+        - "git log --name-status"
+        - "git log --patch"
+        - "git log --patch -5"
+        - "git log --pretty=oneline"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-diff-extra
+    match:
+      type: exact
+      patterns:
+        - "git diff --word-diff"
+        - "git diff --ignore-all-space"
+        - "git diff --ignore-space-change"
+        - "git diff main"
+        - "git diff master"
+        - "git diff origin/main"
+        - "git diff origin/main...HEAD"
+        - "git diff main...HEAD"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-show-extra
+    match:
+      type: exact
+      patterns:
+        - "git show HEAD~2"
+        - "git show HEAD~3"
+        - "git show --name-only"
+        - "git show --name-only HEAD"
+        - "git show --name-status"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: git-maintenance
+    match:
+      type: exact
+      patterns:
+        - "git gc"
+        - "git gc --auto"
+        - "git gc --aggressive"
+        - "git prune --dry-run"
+        - "git prune -n"
+        - "git prune -v -n"
+        - "git pack-refs --all"
+        - "git repack -ad"
+        - "git maintenance run"
+        - "git maintenance register"
+        - "git maintenance start"
+        - "git maintenance stop"
+        - "git maintenance status"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined

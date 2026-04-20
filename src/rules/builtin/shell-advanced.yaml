@@ -17,8 +17,8 @@ rules:
   - id: wait-jobs
     match:
       type: exact
-      patterns: ["jobs", "jobs -l"]
-    action: { type: shell, command: "jobs" }
+      patterns: ["jobs", "jobs -l", "jobs -p", "jobs -r", "jobs -s"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
 
   - id: time-cmd
@@ -58,4 +58,112 @@ rules:
     action:
       type: passthrough
       reason: "`set -e` etc only affect the parent shell"
+    safety: read-only
+
+  # ── tmux read-only ──────────────────────────────────────────────────
+  - id: tmux-info
+    match:
+      type: exact
+      patterns:
+        - "tmux -V"
+        - "tmux --version"
+        - "tmux ls"
+        - "tmux list-sessions"
+        - "tmux list-panes"
+        - "tmux list-windows"
+        - "tmux list-clients"
+        - "tmux list-commands"
+        - "tmux list-keys"
+        - "tmux show-options"
+        - "tmux show-options -g"
+        - "tmux show-environment"
+        - "tmux show-messages"
+        - "tmux info"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── screen read-only ────────────────────────────────────────────────
+  - id: screen-info
+    match:
+      type: exact
+      patterns:
+        - "screen -v"
+        - "screen --version"
+        - "screen -ls"
+        - "screen -list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── zellij / wezterm info ───────────────────────────────────────────
+  - id: multiplexer-info
+    match:
+      type: exact
+      patterns:
+        - "zellij --version"
+        - "zellij -V"
+        - "zellij list-sessions"
+        - "zellij ls"
+        - "wezterm --version"
+        - "wezterm ls-fonts"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── history / alias / type / command ────────────────────────────────
+  - id: shell-introspect
+    match:
+      type: exact
+      patterns:
+        - "history"
+        - "history 10"
+        - "history 20"
+        - "history 50"
+        - "alias"
+        - "unalias"
+        - "type ls"
+        - "type git"
+        - "type node"
+        - "command -v ls"
+        - "command -v node"
+        - "command -v git"
+        - "command -V ls"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: type-command-passthrough
+    match:
+      type: regex
+      patterns:
+        - "^(type|command)\\s+(-[a-zA-Z]+\\s+)?[\\w./\\-]+$"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only
+
+  # ── shopt / ulimit / umask / printenv ───────────────────────────────
+  - id: shell-state
+    match:
+      type: exact
+      patterns:
+        - "shopt"
+        - "shopt -s"
+        - "shopt -p"
+        - "ulimit"
+        - "ulimit -a"
+        - "ulimit -n"
+        - "ulimit -Hn"
+        - "ulimit -Sn"
+        - "umask"
+        - "umask -S"
+        - "umask -p"
+        - "printenv"
+        - "set"
+        - "locale"
+        - "locale -a"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: printenv-get
+    match:
+      type: regex
+      patterns:
+        - "^printenv\\s+[A-Z_][A-Z0-9_]*$"
+    action: { type: shell, command: "{{input}}" }
     safety: read-only

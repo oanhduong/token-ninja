@@ -7,11 +7,24 @@ rules:
         - "deno --version"
         - "deno -V"
         - "deno info"
+        - "deno info --json"
+        - "deno info --location"
         - "deno upgrade --dry-run"
+        - "deno upgrade --version"
         - "deno task"
         - "deno coverage"
         - "deno bench"
         - "deno doc"
+        - "deno doc --json"
+        - "deno types"
+        - "deno eval '1+1'"
+        - "deno repl --help"
+        - "deno --help"
+        - "deno help"
+        - "deno completions bash"
+        - "deno completions zsh"
+        - "deno completions fish"
+        - "deno jupyter --unstable-install"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
 
@@ -20,19 +33,25 @@ rules:
       type: exact
       patterns:
         - "deno check"
+        - "deno check --all"
         - "deno fmt"
         - "deno fmt --check"
+        - "deno fmt --check ."
         - "deno lint"
+        - "deno lint --rules"
         - "deno test"
         - "deno test --allow-all"
         - "deno test --coverage"
+        - "deno test --watch"
+        - "deno test --doc"
+        - "deno test --no-run"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
 
   - id: deno-run-passthrough
     match:
       type: prefix
-      patterns: ["deno run", "deno task", "deno test", "deno bench", "deno doc", "deno info", "deno fmt", "deno lint", "deno check", "deno compile", "deno install"]
+      patterns: ["deno run", "deno task", "deno test", "deno bench", "deno doc", "deno info", "deno fmt", "deno lint", "deno check", "deno compile", "deno install", "deno vendor", "deno eval"]
     action: { type: shell, command: "deno", args_passthrough: true }
     safety: write-network
 

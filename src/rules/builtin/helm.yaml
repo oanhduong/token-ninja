@@ -1,0 +1,118 @@
+domain: helm
+# Helm + Kustomize + Helmfile. Read-only queries are cheap to run locally and
+# very tokenny when passed to an AI tool. Writes (install/upgrade/rollback)
+# are passthrough so flags like --dry-run and --debug stay intact.
+rules:
+  - id: helm-info
+    match:
+      type: exact
+      patterns:
+        - "helm version"
+        - "helm version --short"
+        - "helm version --client"
+        - "helm env"
+        - "helm help"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: helm-read
+    match:
+      type: exact
+      patterns:
+        - "helm list"
+        - "helm list -A"
+        - "helm list --all-namespaces"
+        - "helm ls"
+        - "helm history"
+        - "helm status"
+        - "helm get all"
+        - "helm get values"
+        - "helm get manifest"
+        - "helm get notes"
+        - "helm get hooks"
+        - "helm repo list"
+        - "helm repo update"
+        - "helm search hub"
+        - "helm search repo"
+        - "helm plugin list"
+        - "helm dependency list"
+        - "helm dep list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: helm-read-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "helm list"
+        - "helm ls"
+        - "helm history"
+        - "helm status"
+        - "helm get"
+        - "helm show"
+        - "helm inspect"
+        - "helm repo list"
+        - "helm repo update"
+        - "helm repo add"
+        - "helm repo remove"
+        - "helm search"
+        - "helm plugin list"
+        - "helm dependency list"
+        - "helm dep list"
+    action: { type: shell, command: "helm", args_passthrough: true }
+    safety: read-only
+
+  - id: helm-lint-template
+    match:
+      type: prefix
+      patterns: ["helm lint", "helm template"]
+    action: { type: shell, command: "helm", args_passthrough: true }
+    safety: read-only
+
+  - id: helm-install-upgrade
+    match:
+      type: prefix
+      patterns: ["helm install", "helm upgrade", "helm uninstall", "helm delete", "helm rollback", "helm package", "helm pull", "helm push", "helm dependency update", "helm dep update"]
+    action: { type: shell, command: "helm", args_passthrough: true }
+    safety: write-network
+
+  # ── kustomize ───────────────────────────────────────────────────────
+  - id: kustomize-info
+    match:
+      type: exact
+      patterns:
+        - "kustomize version"
+        - "kustomize --version"
+        - "kustomize help"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: kustomize-build
+    match:
+      type: prefix
+      patterns: ["kustomize build", "kustomize cfg", "kustomize edit list"]
+    action: { type: shell, command: "kustomize", args_passthrough: true }
+    safety: read-only
+
+  # ── helmfile ────────────────────────────────────────────────────────
+  - id: helmfile-info
+    match:
+      type: exact
+      patterns:
+        - "helmfile --version"
+        - "helmfile version"
+        - "helmfile --help"
+        - "helmfile list"
+        - "helmfile charts"
+        - "helmfile deps"
+        - "helmfile diff"
+        - "helmfile lint"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: helmfile-passthrough
+    match:
+      type: prefix
+      patterns: ["helmfile list", "helmfile diff", "helmfile lint", "helmfile template", "helmfile charts", "helmfile deps"]
+    action: { type: shell, command: "helmfile", args_passthrough: true }
+    safety: read-only

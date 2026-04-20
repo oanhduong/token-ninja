@@ -7,18 +7,32 @@ rules:
       patterns:
         - "dart --version"
         - "dart --help"
+        - "dart help"
+        - "dart info"
         - "dart pub get"
         - "dart pub upgrade"
+        - "dart pub upgrade --major-versions"
         - "dart pub outdated"
         - "dart pub deps"
+        - "dart pub deps --json"
         - "dart pub downgrade"
+        - "dart pub publish --dry-run"
         - "dart analyze"
+        - "dart analyze --no-fatal-warnings"
         - "dart format ."
+        - "dart format lib"
         - "dart format --set-exit-if-changed ."
+        - "dart format --output=none --set-exit-if-changed ."
         - "dart test"
+        - "dart test --coverage=coverage"
         - "dart fix --dry-run"
+        - "dart fix --apply --dry-run"
         - "dart compile exe"
+        - "dart compile js"
+        - "dart compile aot-snapshot"
         - "dart doc"
+        - "dart doc --dry-run"
+        - "dart devtools --version"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-network
 
@@ -33,6 +47,7 @@ rules:
         - "dart pub"
         - "dart compile"
         - "dart fix"
+        - "dart doc"
     action: { type: shell, command: "dart", args_passthrough: true }
     safety: write-network
 
@@ -43,21 +58,34 @@ rules:
       patterns:
         - "flutter --version"
         - "flutter -v"
+        - "flutter --help"
         - "flutter doctor"
         - "flutter doctor -v"
+        - "flutter doctor --verbose"
         - "flutter devices"
         - "flutter emulators"
         - "flutter channel"
         - "flutter config"
+        - "flutter config --list"
         - "flutter pub get"
         - "flutter pub upgrade"
+        - "flutter pub upgrade --major-versions"
         - "flutter pub outdated"
         - "flutter pub deps"
         - "flutter clean"
         - "flutter analyze"
+        - "flutter analyze --no-fatal-warnings"
         - "flutter test"
         - "flutter test --coverage"
+        - "flutter test --no-pub"
         - "flutter precache"
+        - "flutter precache --ios"
+        - "flutter precache --android"
+        - "flutter upgrade --dry-run"
+        - "flutter symbolize --help"
+        - "flutter packages get"
+        - "flutter packages upgrade"
+        - "flutter gen-l10n"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-network
 
@@ -70,6 +98,24 @@ rules:
         - "flutter test"
         - "flutter analyze"
         - "flutter pub"
+        - "flutter packages"
         - "flutter create"
+        - "flutter doctor"
+        - "flutter gen-l10n"
     action: { type: shell, command: "flutter", args_passthrough: true }
     safety: write-network
+
+  # ── FVM (Flutter Version Manager) ───────────────────────────────────
+  - id: fvm-info
+    match:
+      type: exact
+      patterns:
+        - "fvm --version"
+        - "fvm -v"
+        - "fvm --help"
+        - "fvm list"
+        - "fvm releases"
+        - "fvm doctor"
+        - "fvm api list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only

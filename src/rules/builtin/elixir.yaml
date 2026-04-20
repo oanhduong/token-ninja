@@ -5,35 +5,68 @@ rules:
       type: exact
       patterns:
         - "mix --version"
+        - "mix -v"
         - "mix help"
+        - "mix help deps"
+        - "mix help test"
+        - "mix help compile"
         - "mix deps"
         - "mix deps.tree"
+        - "mix deps.tree --format"
         - "mix deps.get"
+        - "mix deps.get --only prod"
         - "mix deps.update --all"
         - "mix deps.clean --unused"
+        - "mix deps.unlock --unused"
+        - "mix deps.unlock --all"
         - "mix compile"
+        - "mix compile --force"
+        - "mix compile --warnings-as-errors"
         - "mix test"
         - "mix test --cover"
         - "mix test --trace"
+        - "mix test --failed"
+        - "mix test --stale"
+        - "mix test --warnings-as-errors"
         - "mix format"
         - "mix format --check-formatted"
+        - "mix format --dry-run"
         - "mix credo"
         - "mix credo --strict"
+        - "mix credo suggest"
+        - "mix credo list"
         - "mix dialyzer"
+        - "mix dialyzer --plt"
+        - "mix dialyzer --list-unused-filters"
         - "mix docs"
+        - "mix hex.info"
+        - "mix hex.outdated"
+        - "mix hex.user"
         - "mix ecto.migrate"
+        - "mix ecto.migrations"
         - "mix ecto.rollback"
         - "mix ecto.gen.migration"
+        - "mix ecto.dump"
+        - "mix ecto.create"
+        - "mix ecto.drop"
         - "mix phx.server"
         - "mix phx.routes"
+        - "mix phx.digest"
+        - "mix phx.new --help"
         - "mix release"
+        - "mix release.init"
+        - "mix do deps.get, compile"
+        - "mix local.hex --version"
+        - "mix local.rebar --version"
+        - "mix archive"
+        - "mix profile.eprof --help"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-confined
 
   - id: mix-passthrough
     match:
       type: prefix
-      patterns: ["mix test", "mix compile", "mix format", "mix credo", "mix ecto", "mix phx", "mix run", "mix deps", "mix do", "mix help"]
+      patterns: ["mix test", "mix compile", "mix format", "mix credo", "mix ecto", "mix phx", "mix run", "mix deps", "mix do", "mix help", "mix hex", "mix local", "mix archive", "mix release", "mix dialyzer"]
     action: { type: shell, command: "mix", args_passthrough: true }
     safety: write-confined
 
@@ -43,7 +76,10 @@ rules:
       patterns:
         - "elixir --version"
         - "elixir -v"
+        - "elixir --help"
         - "iex --version"
+        - "iex -v"
+        - "iex --help"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
 
@@ -57,7 +93,7 @@ rules:
   - id: iex-interactive
     match:
       type: exact
-      patterns: ["iex", "iex -S mix", "iex -S mix phx.server"]
+      patterns: ["iex", "iex -S mix", "iex -S mix phx.server", "iex --sname local"]
     action:
       type: passthrough
       reason: "iex is an interactive REPL"
@@ -68,10 +104,20 @@ rules:
       type: exact
       patterns:
         - "erl -version"
+        - "erl -s"
         - "erlc --version"
+        - "erlc -v"
         - "rebar3 --version"
+        - "rebar3 -v"
+        - "rebar3 help"
         - "rebar3 compile"
         - "rebar3 eunit"
         - "rebar3 ct"
+        - "rebar3 xref"
+        - "rebar3 dialyzer"
+        - "rebar3 edoc"
+        - "rebar3 tree"
+        - "rebar3 deps"
+        - "erlang:version()."
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-confined

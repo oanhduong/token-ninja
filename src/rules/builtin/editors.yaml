@@ -1,5 +1,7 @@
 domain: editors
 rules:
+  # Opening a file in an interactive editor is best handed off — we can't
+  # run them meaningfully and capture output.
   - id: code-open
     match:
       type: regex
@@ -10,12 +12,66 @@ rules:
     action: { type: shell, command: "code {{input}}" }
     safety: write-confined
 
-  - id: vim-open
+  - id: interactive-editor-open
     match:
       type: regex
       patterns:
-        - "^(vim|nvim|nano|subl|idea|webstorm|code-insiders|cursor)\\s+([\\w./\\-]+)$"
+        - "^(vim|nvim|nano|subl|idea|webstorm|code-insiders|cursor|zed|helix|hx|micro|emacs|gedit|atom|mate)\\s+([\\w./\\-]+)$"
     action:
       type: passthrough
       reason: "interactive editor — let the AI tool open it or the user runs it themselves"
+    safety: read-only
+
+  # ── Version / help queries for every editor users commonly type ─────
+  - id: editor-info
+    match:
+      type: exact
+      patterns:
+        - "code --version"
+        - "code -v"
+        - "code --help"
+        - "code-insiders --version"
+        - "code-insiders -v"
+        - "cursor --version"
+        - "cursor -v"
+        - "vim --version"
+        - "vim -v"
+        - "nvim --version"
+        - "nvim -v"
+        - "nvim --help"
+        - "nano --version"
+        - "nano -V"
+        - "emacs --version"
+        - "emacs --help"
+        - "subl --version"
+        - "subl -v"
+        - "idea --version"
+        - "webstorm --version"
+        - "pycharm --version"
+        - "goland --version"
+        - "rubymine --version"
+        - "rider --version"
+        - "clion --version"
+        - "helix --version"
+        - "hx --version"
+        - "micro --version"
+        - "micro -version"
+        - "zed --version"
+        - "lvim --version"
+        - "spacevim --version"
+        - "kakoune --version"
+        - "kak --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # Extensions / plugins — read queries are cheap to run.
+  - id: vscode-ext-list
+    match:
+      type: exact
+      patterns:
+        - "code --list-extensions"
+        - "code --list-extensions --show-versions"
+        - "code-insiders --list-extensions"
+        - "cursor --list-extensions"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only

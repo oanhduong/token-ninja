@@ -1,0 +1,147 @@
+domain: container-tools
+rules:
+  # ── podman ──────────────────────────────────────────────────────────
+  - id: podman-info
+    match:
+      type: exact
+      patterns:
+        - "podman --version"
+        - "podman -v"
+        - "podman version"
+        - "podman info"
+        - "podman info --format json"
+        - "podman system info"
+        - "podman system df"
+        - "podman system connection list"
+        - "podman ps"
+        - "podman ps -a"
+        - "podman images"
+        - "podman image ls"
+        - "podman volume ls"
+        - "podman network ls"
+        - "podman pod ps"
+        - "podman machine list"
+        - "podman machine ls"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: podman-read-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "podman ps"
+        - "podman images"
+        - "podman image"
+        - "podman volume ls"
+        - "podman network ls"
+        - "podman inspect"
+        - "podman logs"
+        - "podman stats --no-stream"
+        - "podman pod ps"
+    action: { type: shell, command: "podman", args_passthrough: true }
+    safety: read-only
+
+  - id: podman-write-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "podman run"
+        - "podman build"
+        - "podman pull"
+        - "podman push"
+        - "podman exec"
+        - "podman start"
+        - "podman stop"
+        - "podman rm"
+        - "podman rmi"
+    action: { type: shell, command: "podman", args_passthrough: true }
+    safety: write-network
+
+  # ── nerdctl ─────────────────────────────────────────────────────────
+  - id: nerdctl-info
+    match:
+      type: exact
+      patterns:
+        - "nerdctl --version"
+        - "nerdctl version"
+        - "nerdctl info"
+        - "nerdctl ps"
+        - "nerdctl ps -a"
+        - "nerdctl images"
+        - "nerdctl volume ls"
+        - "nerdctl network ls"
+        - "nerdctl namespace ls"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── buildah / skopeo / crane / dive ─────────────────────────────────
+  - id: image-tools-info
+    match:
+      type: exact
+      patterns:
+        - "buildah --version"
+        - "buildah version"
+        - "buildah info"
+        - "buildah containers"
+        - "buildah images"
+        - "skopeo --version"
+        - "skopeo -v"
+        - "skopeo list-tags docker://docker.io/library/nginx"
+        - "crane version"
+        - "crane --version"
+        - "crane ls docker.io/library/alpine"
+        - "dive --version"
+        - "dive -v"
+        - "trivy --version"
+        - "trivy -v"
+        - "trivy image --help"
+        - "cosign version"
+        - "cosign --version"
+        - "grype --version"
+        - "grype -v"
+        - "syft --version"
+        - "syft -v"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── docker compose read extras ──────────────────────────────────────
+  - id: compose-info
+    match:
+      type: exact
+      patterns:
+        - "docker compose version"
+        - "docker compose --version"
+        - "docker compose ps"
+        - "docker compose ps -a"
+        - "docker compose ls"
+        - "docker compose config"
+        - "docker compose config --services"
+        - "docker compose config --volumes"
+        - "docker compose config --profiles"
+        - "docker compose top"
+        - "docker compose images"
+        - "docker compose port"
+        - "docker-compose version"
+        - "docker-compose --version"
+        - "docker-compose ps"
+        - "docker-compose config"
+        - "docker-compose top"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: compose-read-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "docker compose ps"
+        - "docker compose logs"
+        - "docker compose top"
+        - "docker compose config"
+        - "docker compose images"
+        - "docker compose port"
+        - "docker-compose ps"
+        - "docker-compose logs"
+        - "docker-compose top"
+        - "docker-compose config"
+    action: { type: shell, command: "{{input}}" }
+    safety: read-only

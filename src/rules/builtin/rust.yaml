@@ -8,29 +8,60 @@ rules:
         - "cargo build --release"
         - "cargo build --workspace"
         - "cargo build --all-targets"
+        - "cargo build --all-features"
         - "cargo run"
         - "cargo run --release"
+        - "cargo run --bin"
         - "cargo test"
         - "cargo test --release"
         - "cargo test --workspace"
+        - "cargo test --all-features"
+        - "cargo test --no-run"
         - "cargo check"
         - "cargo check --all-targets"
+        - "cargo check --all-features"
+        - "cargo check --workspace"
         - "cargo clippy"
         - "cargo clippy --all-targets"
+        - "cargo clippy --all-features"
         - "cargo clippy --fix"
+        - "cargo clippy --workspace"
         - "cargo fmt"
         - "cargo fmt --check"
         - "cargo fmt --all"
+        - "cargo fmt --all --check"
         - "cargo doc"
         - "cargo doc --no-deps"
         - "cargo doc --open"
+        - "cargo doc --workspace"
         - "cargo update"
+        - "cargo update --dry-run"
         - "cargo tree"
+        - "cargo tree --duplicates"
+        - "cargo tree -i"
         - "cargo audit"
+        - "cargo audit --json"
+        - "cargo deny check"
+        - "cargo outdated"
         - "cargo bench"
+        - "cargo bench --no-run"
         - "cargo clean"
+        - "cargo clean --release"
         - "cargo --version"
         - "cargo -V"
+        - "cargo --list"
+        - "cargo --help"
+        - "cargo verify-project"
+        - "cargo locate-project"
+        - "cargo pkgid"
+        - "cargo metadata"
+        - "cargo metadata --no-deps"
+        - "cargo metadata --format-version 1"
+        - "cargo search"
+        - "cargo login --help"
+        - "cargo publish --dry-run"
+        - "cargo package --list"
+        - "cargo vendor --help"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-network
 
@@ -48,6 +79,13 @@ rules:
         - "cargo bench"
         - "cargo tree"
         - "cargo audit"
+        - "cargo deny"
+        - "cargo outdated"
+        - "cargo metadata"
+        - "cargo search"
+        - "cargo pkgid"
+        - "cargo verify-project"
+        - "cargo locate-project"
     action: { type: shell, command: "cargo", args_passthrough: true }
     safety: write-network
 
@@ -76,7 +114,14 @@ rules:
   - id: rustc-version
     match:
       type: exact
-      patterns: ["rustc --version", "rustc -V", "rustc -Vv"]
+      patterns:
+        - "rustc --version"
+        - "rustc -V"
+        - "rustc -Vv"
+        - "rustc --print sysroot"
+        - "rustc --print target-list"
+        - "rustc --print cfg"
+        - "rustc --help"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
 
@@ -87,16 +132,60 @@ rules:
     action: { type: shell, command: "{{input}}" }
     safety: read-only
 
+  - id: rustc-print-passthrough
+    match:
+      type: prefix
+      patterns: ["rustc --print"]
+    action: { type: shell, command: "rustc --print", args_passthrough: true }
+    safety: read-only
+
   - id: rustup
     match:
       type: exact
-      patterns: ["rustup show", "rustup update", "rustup toolchain list", "rustup component list", "rustup which cargo"]
+      patterns:
+        - "rustup show"
+        - "rustup show active-toolchain"
+        - "rustup show home"
+        - "rustup update"
+        - "rustup update stable"
+        - "rustup update nightly"
+        - "rustup toolchain list"
+        - "rustup toolchain list -v"
+        - "rustup component list"
+        - "rustup component list --installed"
+        - "rustup target list"
+        - "rustup target list --installed"
+        - "rustup which cargo"
+        - "rustup which rustc"
+        - "rustup default"
+        - "rustup --version"
+        - "rustup -V"
+        - "rustup self update"
+        - "rustup check"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-network
 
   - id: rustup-passthrough
     match:
       type: prefix
-      patterns: ["rustup show", "rustup toolchain list", "rustup component list", "rustup which"]
+      patterns: ["rustup show", "rustup toolchain list", "rustup component list", "rustup target list", "rustup which"]
     action: { type: shell, command: "rustup", args_passthrough: true }
+    safety: read-only
+
+  # ── sccache / cargo-nextest / cargo-binstall helpers ────────────────
+  - id: rust-helpers
+    match:
+      type: exact
+      patterns:
+        - "sccache --show-stats"
+        - "sccache --show-adv-stats"
+        - "sccache --version"
+        - "sccache -V"
+        - "cargo nextest --version"
+        - "cargo nextest list"
+        - "cargo nextest show-config"
+        - "cargo binstall --version"
+        - "cargo binstall --help"
+        - "cargo watch --version"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only

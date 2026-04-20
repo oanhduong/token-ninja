@@ -717,3 +717,464 @@ gitleaks version
 pre-commit --version
 pre-commit run --all-files
 pre-commit install
+
+# ── modern-cli (ripgrep, fd, bat, eza, zoxide, delta, fzf, jq, yq, …) ─
+rg --version
+rg pattern
+rg -i TODO src
+rg --type-list
+fd --version
+fd ".*\.ts"
+fd . src
+bat --version
+bat README.md
+bat --list-themes
+eza --version
+eza -la
+exa --long
+zoxide --version
+delta --version
+fzf --version
+jq --version
+jq '.name' package.json
+yq --version
+hyperfine --version
+tldr --version
+tldr git
+dust --version
+duf
+ncdu --version
+btop --version
+neofetch --version
+glow --version
+hexyl --version
+
+# ── make / just / task extras ──────────────────────────────────────────
+make -p
+make -q
+make --help
+make list
+make targets
+make fmt
+make lint
+make release
+make install
+make vendor
+make coverage
+just --summary
+just --variables
+just --choose
+task --help
+task --summary
+task --status
+mage --version
+mage -h
+buck2 --version
+
+# ── helm + kustomize + helmfile ───────────────────────────────────────
+helm version
+helm version --short
+helm env
+helm list
+helm list -A
+helm ls
+helm history myrelease
+helm get all myrelease
+helm get values myrelease
+helm repo list
+helm repo update
+helm search repo nginx
+helm plugin list
+helm dependency list
+helm dep list
+helm lint .
+helm template .
+kustomize version
+kustomize build .
+helmfile --version
+helmfile list
+helmfile lint
+
+# ── gitops (argocd, flux, skaffold, tilt, fastlane, pre-commit) ───────
+argocd version
+argocd context
+argocd app list
+argocd proj list
+argocd repo list
+argocd app get myapp
+argocd app diff myapp
+flux --version
+flux version
+flux check
+flux get all
+flux get all -A
+flux get sources all
+flux get kustomizations
+flux stats
+skaffold version
+skaffold diagnose
+skaffold config list
+skaffold schema list
+tilt version
+tilt doctor
+tilt get all
+fastlane --version
+fastlane lanes
+fastlane actions
+fastlane env
+pre-commit sample-config
+pre-commit validate-config
+pre-commit autoupdate
+pre-commit clean
+
+# ── secrets-infra (vault, nomad, packer, sops, op, bw) ────────────────
+vault version
+vault status
+vault token lookup
+vault auth list
+vault secrets list
+vault policy list
+vault kv list secret
+vault kv get secret/foo
+vault read sys/health
+nomad version
+nomad status
+nomad node status
+nomad server members
+nomad agent-info
+nomad job status myjob
+nomad deployment status
+nomad eval list
+nomad namespace list
+nomad job inspect myjob
+nomad alloc status abc
+packer -v
+packer plugins installed
+sops --version
+age --version
+op --version
+op account list
+op vault list
+bw --version
+bw status
+
+# ── container-tools (podman, nerdctl, buildah, skopeo, crane, dive) ──
+podman --version
+podman version
+podman info
+podman ps
+podman ps -a
+podman images
+podman image ls
+podman volume ls
+podman network ls
+podman pod ps
+podman machine list
+nerdctl version
+nerdctl ps
+nerdctl images
+buildah version
+buildah containers
+buildah images
+skopeo --version
+skopeo -v
+crane version
+crane --version
+dive --version
+trivy --version
+cosign version
+grype --version
+syft --version
+docker compose version
+docker compose ps
+docker compose ls
+docker compose config
+docker compose top
+docker compose images
+
+# ── k8s-tools (kubectl extras, kubectx, k9s, kind, minikube, k3d) ────
+kubectl version --short
+kubectl version --client
+kubectl config current-context
+kubectl config get-contexts
+kubectl config view --minify
+kubectl config get-clusters
+kubectl config get-users
+kubectl cluster-info
+kubectl api-resources
+kubectl api-versions
+kubectl auth whoami
+kubectl auth can-i --list
+kubectl get pods
+kubectl get pods -A
+kubectl get pods -o wide
+kubectl get svc
+kubectl get deploy
+kubectl get ns
+kubectl get nodes
+kubectl get nodes -o wide
+kubectl get events
+kubectl get cm
+kubectl get secrets
+kubectl get pv
+kubectl get pvc
+kubectl get ingress
+kubectl get sa
+kubectl get crd
+kubectl top nodes
+kubectl top pods
+kubectx
+kubectx -c
+kubens
+kubens -c
+kubecolor --version
+k9s version
+lens --version
+k0s version
+k0s status
+kind --version
+kind get clusters
+minikube version
+minikube status
+minikube profile list
+minikube addons list
+minikube ip
+k3d --version
+k3d cluster list
+colima version
+colima status
+stern --version
+velero version
+velero backup get
+
+# ── git-extras (version, config, log/diff/show/branch/tag, plumbing) ──
+git --version
+git version
+git help log
+git help rebase
+git help merge
+git help stash
+git config --global --list
+git config user.email
+git config user.name
+git config core.editor
+git config remote.origin.url
+git log --oneline -10
+git log --oneline --graph
+git log --oneline --graph --decorate --all
+git log --stat
+git log --patch
+git log --name-only
+git log --since=1.week
+git log HEAD..origin/main
+git log origin/main..HEAD
+git diff --stat
+git diff --numstat
+git diff --name-only
+git diff --cached
+git diff --staged
+git diff HEAD
+git diff HEAD~1
+git diff main
+git diff origin/main
+git diff origin/main...HEAD
+git show HEAD
+git show HEAD~1
+git show --stat HEAD
+git show --name-only HEAD
+git remote -v
+git remote show origin
+git remote get-url origin
+git ls-remote
+git ls-remote --heads
+git branch
+git branch -a
+git branch -r
+git branch -v
+git branch --merged
+git branch --no-merged
+git branch --show-current
+git branch --sort=-committerdate
+git tag
+git tag -l
+git tag --sort=-creatordate
+git status
+git status -s
+git status -sb
+git status --short
+git status --porcelain
+git status --porcelain=v2
+git rev-parse HEAD
+git rev-parse --short HEAD
+git rev-parse --abbrev-ref HEAD
+git rev-parse --show-toplevel
+git rev-parse --is-inside-work-tree
+git rev-list --count HEAD
+git for-each-ref
+git for-each-ref refs/heads
+git show-branch
+git symbolic-ref HEAD
+git symbolic-ref --short HEAD
+git cat-file -t HEAD
+git cat-file -p HEAD
+git grep TODO
+git blame src/cli.ts
+git gc
+git gc --auto
+git prune --dry-run
+git maintenance run
+git maintenance status
+
+# ── editor extras (version/help queries) ──────────────────────────────
+code --version
+code -v
+code --list-extensions
+cursor --version
+nvim --version
+nano --version
+emacs --version
+subl --version
+idea --version
+pycharm --version
+goland --version
+helix --version
+hx --version
+micro --version
+zed --version
+
+# ── rust / cargo extras ───────────────────────────────────────────────
+cargo --list
+cargo metadata
+cargo metadata --no-deps
+cargo search serde
+cargo pkgid
+cargo verify-project
+cargo locate-project
+cargo publish --dry-run
+cargo package --list
+cargo outdated
+cargo deny check
+cargo nextest list
+rustc --print sysroot
+rustc --print target-list
+rustup show active-toolchain
+rustup target list
+rustup target list --installed
+rustup check
+sccache --show-stats
+
+# ── deno / dart / flutter / kotlin / elixir extras ────────────────────
+deno info --json
+deno help
+deno completions bash
+deno check --all
+deno test --watch
+dart help
+dart info
+dart pub deps --json
+dart pub publish --dry-run
+dart fix --apply --dry-run
+dart compile js
+dart devtools --version
+flutter doctor --verbose
+flutter pub upgrade --major-versions
+flutter upgrade --dry-run
+flutter gen-l10n
+fvm --version
+fvm list
+fvm doctor
+kotlin --version
+kotlinc --version
+gradle tasks --all
+gradle projects
+gradle properties
+gradle dependencyInsight
+./gradlew ktlintCheck
+./gradlew detekt
+mix help deps
+mix deps.get --only prod
+mix test --failed
+mix test --stale
+mix credo suggest
+mix ecto.create
+mix ecto.drop
+mix hex.info
+mix hex.outdated
+mix local.hex --version
+rebar3 tree
+rebar3 xref
+
+# ── test-runner extras ────────────────────────────────────────────────
+vitest list
+vitest bench
+vitest typecheck
+mocha --version
+cypress info
+cypress verify
+playwright show-report
+ava --version
+tap --version
+tap list
+rspec --dry-run
+pytest --collect-only
+pytest --markers
+pytest --fixtures
+tox -l
+nox -l
+go test ./... -race
+
+# ── gh extras (codespace, gist, search, label, project) ───────────────
+gh --version
+gh version
+gh auth token
+gh config list
+gh status
+gh extension list
+gh alias list
+gh ssh-key list
+gh gpg-key list
+gh pr list --draft
+gh pr status
+gh gist list
+gh codespace list
+gh cs list
+gh browse
+gh search repos topic:ai
+gh label list
+gh project list
+
+# ── shell-advanced extras (tmux, screen, zellij, history, shopt) ──────
+tmux -V
+tmux --version
+tmux ls
+tmux list-sessions
+tmux list-panes
+tmux list-windows
+tmux list-commands
+tmux list-keys
+tmux show-options -g
+tmux show-environment
+tmux info
+screen -v
+screen -ls
+zellij --version
+zellij list-sessions
+zellij ls
+wezterm --version
+history
+history 20
+alias
+type ls
+type git
+command -v node
+shopt -p
+ulimit -a
+ulimit -n
+umask
+umask -S
+printenv
+printenv PATH
+locale
+locale -a
+jobs
+jobs -l

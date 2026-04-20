@@ -1,0 +1,116 @@
+domain: k8s-tools
+# Kubernetes ecosystem tools beyond core kubectl (which lives in
+# kubernetes.yaml). Keep purely ADDITIVE — never re-declare exact patterns
+# already owned by kubernetes.yaml.
+rules:
+  # ── kubectl read-only extras (version/config/cluster-info/api) ──────
+  - id: kubectl-info
+    match:
+      type: exact
+      patterns:
+        - "kubectl version"
+        - "kubectl version --short"
+        - "kubectl version --client"
+        - "kubectl version --client=true"
+        - "kubectl config current-context"
+        - "kubectl config get-contexts"
+        - "kubectl config view"
+        - "kubectl config view --minify"
+        - "kubectl config get-clusters"
+        - "kubectl config get-users"
+        - "kubectl cluster-info"
+        - "kubectl cluster-info dump"
+        - "kubectl api-resources"
+        - "kubectl api-resources --namespaced=true"
+        - "kubectl api-resources --namespaced=false"
+        - "kubectl api-versions"
+        - "kubectl options"
+        - "kubectl auth can-i --list"
+        - "kubectl auth whoami"
+        - "kubectl top nodes"
+        - "kubectl top pods"
+        - "kubectl top pods -A"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── kubectl get extras not in kubernetes.yaml ───────────────────────
+  - id: kubectl-get-extra
+    match:
+      type: exact
+      patterns:
+        - "kubectl get pods -o wide"
+        - "kubectl get roles"
+        - "kubectl get rolebindings"
+        - "kubectl get clusterroles"
+        - "kubectl get crd"
+        - "kubectl get events --sort-by=.lastTimestamp"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── kubectx / kubens / kubecolor ────────────────────────────────────
+  - id: kubectx-info
+    match:
+      type: exact
+      patterns:
+        - "kubectx"
+        - "kubectx -c"
+        - "kubectx --current"
+        - "kubectx -h"
+        - "kubens"
+        - "kubens -c"
+        - "kubens -h"
+        - "kubecolor --version"
+        - "kubecolor -v"
+        - "kubie info"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── k9s / lens / k0s / kind / minikube ──────────────────────────────
+  - id: k-tools-info
+    match:
+      type: exact
+      patterns:
+        - "k9s version"
+        - "k9s info"
+        - "lens --version"
+        - "k0s version"
+        - "k0s sysinfo"
+        - "k0s status"
+        - "kind --version"
+        - "kind -v"
+        - "kind get clusters"
+        - "kind get nodes"
+        - "minikube version"
+        - "minikube --version"
+        - "minikube status"
+        - "minikube profile list"
+        - "minikube addons list"
+        - "minikube ip"
+        - "minikube config view"
+        - "k3d --version"
+        - "k3d cluster list"
+        - "k3d node list"
+        - "colima version"
+        - "colima status"
+        - "colima list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── stern / kail / kubeseal / velero ────────────────────────────────
+  - id: k8s-misc-info
+    match:
+      type: exact
+      patterns:
+        - "stern --version"
+        - "stern -v"
+        - "stern --help"
+        - "kail --version"
+        - "kubeseal --version"
+        - "kubeseal -v"
+        - "velero version"
+        - "velero --version"
+        - "velero backup get"
+        - "velero restore get"
+        - "velero schedule get"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only

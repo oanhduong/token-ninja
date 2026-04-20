@@ -109,6 +109,26 @@ rules:
         - "just --fmt --check"
         - "just --evaluate"
         - "just --choose"
+        - "just --variables"
+        - "just --list-submodules"
+        - "just --help"
+        - "just -h"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── mage / buck2 info ───────────────────────────────────────────────
+  - id: mage-buck2-info
+    match:
+      type: exact
+      patterns:
+        - "mage --version"
+        - "mage -version"
+        - "mage -l"
+        - "mage -h"
+        - "mage -help"
+        - "buck2 --version"
+        - "buck2 help"
+        - "bazelisk --version"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
 

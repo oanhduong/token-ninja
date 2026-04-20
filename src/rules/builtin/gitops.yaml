@@ -1,0 +1,164 @@
+domain: gitops
+rules:
+  # ── argocd ──────────────────────────────────────────────────────────
+  - id: argocd-info
+    match:
+      type: exact
+      patterns:
+        - "argocd version"
+        - "argocd version --client"
+        - "argocd --help"
+        - "argocd context"
+        - "argocd cluster list"
+        - "argocd app list"
+        - "argocd proj list"
+        - "argocd repo list"
+        - "argocd account can-i"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: argocd-read-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "argocd app get"
+        - "argocd app list"
+        - "argocd app history"
+        - "argocd app manifests"
+        - "argocd app diff"
+        - "argocd proj get"
+        - "argocd proj list"
+        - "argocd repo list"
+        - "argocd cluster get"
+        - "argocd cluster list"
+    action: { type: shell, command: "argocd", args_passthrough: true }
+    safety: read-only
+
+  # ── flux ────────────────────────────────────────────────────────────
+  - id: flux-info
+    match:
+      type: exact
+      patterns:
+        - "flux --version"
+        - "flux -v"
+        - "flux version"
+        - "flux check"
+        - "flux check --pre"
+        - "flux get all"
+        - "flux get all -A"
+        - "flux get sources all"
+        - "flux get kustomizations"
+        - "flux get helmreleases"
+        - "flux stats"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: flux-get-passthrough
+    match:
+      type: prefix
+      patterns: ["flux get", "flux stats", "flux logs"]
+    action: { type: shell, command: "flux", args_passthrough: true }
+    safety: read-only
+
+  # ── skaffold ────────────────────────────────────────────────────────
+  - id: skaffold-info
+    match:
+      type: exact
+      patterns:
+        - "skaffold version"
+        - "skaffold --version"
+        - "skaffold diagnose"
+        - "skaffold config list"
+        - "skaffold schema list"
+        - "skaffold options"
+        - "skaffold inspect modules list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: skaffold-passthrough
+    match:
+      type: prefix
+      patterns:
+        - "skaffold build"
+        - "skaffold deploy"
+        - "skaffold delete"
+        - "skaffold render"
+        - "skaffold diagnose"
+        - "skaffold inspect"
+    action: { type: shell, command: "skaffold", args_passthrough: true }
+    safety: write-network
+
+  # ── tilt ────────────────────────────────────────────────────────────
+  - id: tilt-info
+    match:
+      type: exact
+      patterns:
+        - "tilt version"
+        - "tilt --version"
+        - "tilt doctor"
+        - "tilt get all"
+        - "tilt get session"
+        - "tilt alpha tiltfile-result"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── fastlane ────────────────────────────────────────────────────────
+  - id: fastlane-info
+    match:
+      type: exact
+      patterns:
+        - "fastlane --version"
+        - "fastlane -v"
+        - "fastlane --help"
+        - "fastlane lanes"
+        - "fastlane list"
+        - "fastlane actions"
+        - "fastlane env"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: fastlane-passthrough
+    match:
+      type: prefix
+      patterns: ["fastlane actions", "fastlane lanes"]
+    action: { type: shell, command: "fastlane", args_passthrough: true }
+    safety: read-only
+
+  # ── pre-commit ──────────────────────────────────────────────────────
+  - id: precommit-info
+    match:
+      type: exact
+      patterns:
+        - "pre-commit --version"
+        - "pre-commit -V"
+        - "pre-commit --help"
+        - "pre-commit sample-config"
+        - "pre-commit validate-config"
+        - "pre-commit validate-manifest"
+        - "pre-commit autoupdate --dry-run"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: precommit-run
+    match:
+      type: exact
+      patterns:
+        - "pre-commit run"
+        - "pre-commit run --all-files"
+        - "pre-commit run -a"
+        - "pre-commit install"
+        - "pre-commit install --install-hooks"
+        - "pre-commit install-hooks"
+        - "pre-commit uninstall"
+        - "pre-commit autoupdate"
+        - "pre-commit clean"
+        - "pre-commit gc"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: precommit-passthrough
+    match:
+      type: prefix
+      patterns: ["pre-commit run", "pre-commit install"]
+    action: { type: shell, command: "pre-commit", args_passthrough: true }
+    safety: write-confined

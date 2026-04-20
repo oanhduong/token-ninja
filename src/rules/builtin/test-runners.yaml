@@ -1,9 +1,22 @@
 domain: test-runners
 rules:
+  # ── Jest ────────────────────────────────────────────────────────────
   - id: jest
     match:
       type: exact
-      patterns: ["jest", "jest --coverage", "jest --watchAll=false", "jest --ci", "jest --runInBand"]
+      patterns:
+        - "jest"
+        - "jest --coverage"
+        - "jest --watchAll=false"
+        - "jest --ci"
+        - "jest --runInBand"
+        - "jest --listTests"
+        - "jest --showConfig"
+        - "jest --version"
+        - "jest -v"
+        - "jest --help"
+        - "jest --passWithNoTests"
+        - "jest --detectOpenHandles"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-confined
 
@@ -14,31 +27,65 @@ rules:
     action: { type: shell, command: "jest", args_passthrough: true }
     safety: write-confined
 
+  # ── Vitest ──────────────────────────────────────────────────────────
   - id: vitest
     match:
       type: exact
-      patterns: ["vitest", "vitest run", "vitest --coverage", "vitest run --coverage"]
+      patterns:
+        - "vitest"
+        - "vitest run"
+        - "vitest --coverage"
+        - "vitest run --coverage"
+        - "vitest --version"
+        - "vitest --help"
+        - "vitest list"
+        - "vitest bench"
+        - "vitest typecheck"
+        - "vitest run --reporter=verbose"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-confined
 
   - id: vitest-passthrough
     match:
       type: prefix
-      patterns: ["vitest run", "vitest"]
+      patterns: ["vitest run", "vitest bench", "vitest typecheck", "vitest"]
     action: { type: shell, command: "vitest", args_passthrough: true }
     safety: write-confined
 
+  # ── Mocha ───────────────────────────────────────────────────────────
   - id: mocha
+    match:
+      type: exact
+      patterns:
+        - "mocha --version"
+        - "mocha -V"
+        - "mocha --help"
+        - "mocha --list-interfaces"
+        - "mocha --list-reporters"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  - id: mocha-passthrough
     match:
       type: prefix
       patterns: ["mocha"]
     action: { type: shell, command: "mocha", args_passthrough: true }
     safety: write-confined
 
+  # ── Cypress ─────────────────────────────────────────────────────────
   - id: cypress
     match:
       type: exact
-      patterns: ["cypress run", "cypress open", "cypress --version"]
+      patterns:
+        - "cypress run"
+        - "cypress open"
+        - "cypress --version"
+        - "cypress -v"
+        - "cypress help"
+        - "cypress info"
+        - "cypress verify"
+        - "cypress cache list"
+        - "cypress cache path"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-confined
 
@@ -49,23 +96,125 @@ rules:
     action: { type: shell, command: "cypress", args_passthrough: true }
     safety: write-confined
 
+  # ── Playwright ──────────────────────────────────────────────────────
   - id: playwright
     match:
       type: exact
-      patterns: ["playwright test", "playwright test --ui", "playwright test --headed", "playwright --version", "npx playwright test", "npx playwright install"]
+      patterns:
+        - "playwright test"
+        - "playwright test --ui"
+        - "playwright test --headed"
+        - "playwright test --list"
+        - "playwright test --reporter=list"
+        - "playwright --version"
+        - "playwright -V"
+        - "playwright help"
+        - "playwright show-report"
+        - "playwright codegen --help"
+        - "npx playwright test"
+        - "npx playwright install"
+        - "npx playwright install-deps"
+        - "npx playwright --version"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-confined
 
   - id: playwright-passthrough
     match:
       type: prefix
-      patterns: ["playwright test", "playwright install"]
+      patterns: ["playwright test", "playwright install", "playwright show-report"]
     action: { type: shell, command: "playwright", args_passthrough: true }
     safety: write-confined
 
+  # ── Karma ───────────────────────────────────────────────────────────
   - id: karma
     match:
       type: exact
-      patterns: ["karma start", "karma start --single-run", "karma init"]
+      patterns: ["karma start", "karma start --single-run", "karma init", "karma --version"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  # ── Node built-in test runner / ava / tap ───────────────────────────
+  - id: node-test
+    match:
+      type: exact
+      patterns:
+        - "node --test"
+        - "node --test --test-reporter=spec"
+        - "node --test --experimental-test-coverage"
+        - "node --test tests"
+        - "node --test tests/"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: ava
+    match:
+      type: exact
+      patterns: ["ava", "ava --watch", "ava --verbose", "ava --version", "ava -V"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-confined
+
+  - id: ava-passthrough
+    match:
+      type: prefix
+      patterns: ["ava "]
+    action: { type: shell, command: "ava", args_passthrough: true }
+    safety: write-confined
+
+  - id: tap
+    match:
+      type: exact
+      patterns: ["tap", "tap --version", "tap -V", "tap --help", "tap list", "tap plugin list"]
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── RSpec / MiniTest ────────────────────────────────────────────────
+  - id: rspec-minitest
+    match:
+      type: exact
+      patterns:
+        - "rspec --help"
+        - "rspec --version"
+        - "rspec -v"
+        - "rspec --dry-run"
+        - "rspec --list-examples"
+        - "minitest --help"
+        - "ruby -Itest -rminitest/autorun -e nil"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── pytest / tox / nox (read-only surface) ──────────────────────────
+  - id: pytest-read
+    match:
+      type: exact
+      patterns:
+        - "pytest --version"
+        - "pytest -V"
+        - "pytest --help"
+        - "pytest --collect-only"
+        - "pytest --collect-only -q"
+        - "pytest --markers"
+        - "pytest --fixtures"
+        - "pytest --setup-plan"
+        - "tox --version"
+        - "tox -l"
+        - "tox --listenvs"
+        - "tox --listenvs-all"
+        - "nox --version"
+        - "nox -l"
+        - "nox --list"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
+
+  # ── Go test shortcuts ──────────────────────────────────────────────
+  - id: go-test-shortcuts
+    match:
+      type: exact
+      patterns:
+        - "go test ./..."
+        - "go test ./... -race"
+        - "go test ./... -count=1"
+        - "go test ./... -short"
+        - "go test -run"
+        - "go test -v"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: write-confined

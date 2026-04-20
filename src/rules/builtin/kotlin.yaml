@@ -3,14 +3,24 @@ rules:
   - id: kotlin-version
     match:
       type: exact
-      patterns: ["kotlin -version", "kotlinc -version", "kotlinc-native -version"]
+      patterns:
+        - "kotlin -version"
+        - "kotlin -v"
+        - "kotlin --version"
+        - "kotlinc -version"
+        - "kotlinc -v"
+        - "kotlinc --version"
+        - "kotlinc-native -version"
+        - "kotlinc-jvm -version"
+        - "kotlinc -help"
+        - "kotlinc -X"
     action: { type: shell, command: "{{input}}", args_passthrough: false }
     safety: read-only
 
   - id: kotlin-version-passthrough
     match:
       type: regex
-      patterns: ["^(kotlin|kotlinc|kotlinc-native)\\s+-version$"]
+      patterns: ["^(kotlin|kotlinc|kotlinc-native|kotlinc-jvm)\\s+-version$"]
     action: { type: shell, command: "{{input}}" }
     safety: read-only
 
@@ -21,9 +31,57 @@ rules:
     action: { type: shell, command: "kotlinc", args_passthrough: true }
     safety: write-confined
 
+  - id: gradle-info
+    match:
+      type: exact
+      patterns:
+        - "gradle --version"
+        - "gradle -v"
+        - "gradle tasks"
+        - "gradle tasks --all"
+        - "gradle projects"
+        - "gradle properties"
+        - "gradle dependencies"
+        - "gradle dependencyInsight"
+        - "gradle help"
+        - "gradle wrapper --help"
+        - "./gradlew --version"
+        - "./gradlew -v"
+        - "./gradlew tasks"
+        - "./gradlew tasks --all"
+        - "./gradlew projects"
+        - "./gradlew dependencies"
+        - "./gradlew help"
+        - "./gradlew assemble"
+        - "./gradlew build"
+        - "./gradlew clean"
+        - "./gradlew test"
+        - "./gradlew check"
+        - "./gradlew ktlintCheck"
+        - "./gradlew detekt"
+        - "./gradlew lint"
+        - "gradlew --version"
+        - "gradlew tasks"
+        - "gradlew build"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: write-network
+
   - id: gradle-app-tasks
     match:
       type: prefix
-      patterns: [":app:build", ":app:test", ":app:assemble", "gradle :app:"]
-    action: { type: shell, command: "gradle", args_passthrough: true }
+      patterns: [":app:build", ":app:test", ":app:assemble", "gradle :app:", "gradle :", "./gradlew :"]
+    action: { type: shell, command: "{{input}}" }
     safety: write-network
+
+
+  # ── kotlinx + ktor + kscript ────────────────────────────────────────
+  - id: kotlin-extras
+    match:
+      type: exact
+      patterns:
+        - "kscript --version"
+        - "kscript --help"
+        - "ktor --version"
+        - "ktor -v"
+    action: { type: shell, command: "{{input}}", args_passthrough: false }
+    safety: read-only
