@@ -91,24 +91,31 @@ function stripEscape(prompt) {
 }
 
 function buildSuppressionText(result) {
+  // Output-first layout: the captured stdout (with its original ANSI colors)
+  // is the whole response the user sees, exactly as if they had typed the
+  // command in their terminal. A single dimmed footer line at the very end
+  // acknowledges ninja handled it and reports the token savings. Dim ANSI
+  // (\x1b[2m) makes the footer recede without vanishing, matching the
+  // "feels native" goal.
   const saved = Number(result.tokens_saved_estimate || 0).toLocaleString("en-US");
   const rule = result.rule_id || "local";
-  const lines = [
-    `⚡ token-ninja handled locally (${rule}) · saved ~${saved} tokens`,
-    "",
-  ];
   const stdout = typeof result.stdout === "string" ? result.stdout.replace(/\n+$/, "") : "";
-  if (stdout.length > 0) {
-    lines.push(stdout);
-  }
   const stderr = typeof result.stderr === "string" ? result.stderr.replace(/\n+$/, "") : "";
-  if (stderr.length > 0) {
-    lines.push("", "stderr:", stderr);
-  }
   const code = typeof result.exit_code === "number" ? result.exit_code : 0;
-  if (code !== 0) {
-    lines.push("", `(exit ${code})`);
+
+  const lines = [];
+  if (stdout.length > 0) lines.push(stdout);
+  if (stderr.length > 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push(stderr);
   }
+  if (code !== 0) {
+    if (lines.length > 0) lines.push("");
+    lines.push(`(exit ${code})`);
+  }
+  const footer = `\x1b[2m⚡ ninja · saved ~${saved} tokens · ${rule}\x1b[22m`;
+  if (lines.length > 0) lines.push("");
+  lines.push(footer);
   return lines.join("\n");
 }
 

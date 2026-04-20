@@ -67,10 +67,62 @@ describe("Claude Code UserPromptSubmit hook", () => {
     expect(r.status).toBe(0);
     const parsed = JSON.parse(r.stdout.trim());
     expect(parsed.decision).toBe("block");
-    expect(parsed.reason).toMatch(/token-ninja handled locally/);
-    expect(parsed.reason).toMatch(/git-status/);
-    expect(parsed.reason).toMatch(/512/);
-    expect(parsed.reason).toMatch(/On branch main/);
+    // Output-first layout: the captured stdout appears before the footer.
+    const reason: string = parsed.reason;
+    expect(reason).toMatch(/On branch main/);
+    expect(reason).toMatch(/⚡ ninja · saved ~512 tokens · git-status/);
+    // The footer is dimmed (ANSI \x1b[2m … \x1b[22m) so it visually recedes.
+    expect(reason).toContain("\x1b[2m");
+    expect(reason).toContain("\x1b[22m");
+    expect(reason.indexOf("\x1b[2m")).toBeLessThan(reason.indexOf("saved ~512"));
+    expect(reason.indexOf("saved ~512")).toBeLessThan(reason.indexOf("\x1b[22m"));
+    // stdout must come before the footer, not after.
+    const footerIdx = reason.indexOf("⚡ ninja");
+    const stdoutIdx = reason.indexOf("On branch main");
+    expect(stdoutIdx).toBeGreaterThanOrEqual(0);
+    expect(footerIdx).toBeGreaterThan(stdoutIdx);
+  });
+
+  it("renders just the footer when stdout is empty (no leading blank line)", async () => {
+    await writeFakeNinja({
+      handled: true,
+      stdout: "",
+      stderr: "",
+      exit_code: 0,
+      rule_id: "touch-file",
+      tokens_saved_estimate: 120,
+      matched_via: "prefix",
+    });
+    const r = runHook({ prompt: "touch .gitkeep" }, dir, { xdg });
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout.trim());
+    expect(parsed.decision).toBe("block");
+    // No leading blank line, no stdout section — just the dimmed footer.
+    expect(parsed.reason).toBe("\x1b[2m⚡ ninja · saved ~120 tokens · touch-file\x1b[22m");
+  });
+
+  it("keeps stderr + exit code sections but places the footer last", async () => {
+    await writeFakeNinja({
+      handled: true,
+      stdout: "some output\n",
+      stderr: "warning: deprecated flag\n",
+      exit_code: 2,
+      rule_id: "npm-install",
+      tokens_saved_estimate: 300,
+      matched_via: "prefix",
+    });
+    const r = runHook({ prompt: "npm install lodash" }, dir, { xdg });
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout.trim());
+    const reason: string = parsed.reason;
+    const stdoutIdx = reason.indexOf("some output");
+    const stderrIdx = reason.indexOf("warning: deprecated flag");
+    const exitIdx = reason.indexOf("(exit 2)");
+    const footerIdx = reason.indexOf("⚡ ninja");
+    expect(stdoutIdx).toBeGreaterThanOrEqual(0);
+    expect(stderrIdx).toBeGreaterThan(stdoutIdx);
+    expect(exitIdx).toBeGreaterThan(stderrIdx);
+    expect(footerIdx).toBeGreaterThan(exitIdx);
   });
 
   it("passes through when ninja reports handled=false", async () => {
