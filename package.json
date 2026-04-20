@@ -1,6 +1,6 @@
 {
   "name": "token-ninja",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Save tokens on commands that don't need AI. Intercepts commands meant for AI coding assistants and runs simple/deterministic ones locally with zero LLM calls.",
   "keywords": [
     "ai",

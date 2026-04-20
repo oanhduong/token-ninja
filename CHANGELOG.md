@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
+## [0.4.1](https://github.com/oanhduong/token-ninja/compare/v0.4.0...v0.4.1) (2026-04-20)
+
+
+### Bug Fixes
+
+* point package.json urls to the real repo (oanhduong/token-ninja) ([25c58e0](https://github.com/oanhduong/token-ninja/commit/25c58e0af50dff5c2fe343d1f70e2eeb1ada9b29))
+
 ## [0.4.0](https://github.com/oanhduong/token-ninja/compare/v0.3.0...v0.4.0) (2026-04-20)
 
 
