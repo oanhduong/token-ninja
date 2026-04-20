@@ -9,9 +9,9 @@ export default defineConfig({
       include: ["src/router/**", "src/safety/**", "src/rules/**"],
       exclude: ["src/rules/types.ts", "src/rules/builtin/**"],
       thresholds: {
-        lines: 85,
-        branches: 80,
-        statements: 85,
+        lines: 88,
+        branches: 82,
+        statements: 88,
         functions: 95,
       },
     },
