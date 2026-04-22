@@ -31,7 +31,31 @@ describe("classifier — template expansion & args_passthrough", () => {
   it("preserves multi-word args in git commit -m", async () => {
     const r = await classify("git commit -m \"fix: a thing\"", rules, ctx);
     expect(r?.rule.id).toBe("git-commit-message");
-    expect(r?.command).toContain("fix: a thing");
+    expect(r?.command).toBe("git commit -m \"fix: a thing\"");
+  });
+
+  it("does not duplicate the `git commit` prefix (regression)", async () => {
+    const r = await classify("git commit -m 'hello'", rules, ctx);
+    expect(r?.command).toBe("git commit -m 'hello'");
+    expect(r?.command.startsWith("git commit git")).toBe(false);
+  });
+
+  it("matches git commit with flags before -m", async () => {
+    const r = await classify("git commit --allow-empty -m \"empty\"", rules, ctx);
+    expect(r?.rule.id).toBe("git-commit-message");
+    expect(r?.command).toBe("git commit --allow-empty -m \"empty\"");
+  });
+
+  it("matches git commit -S -m (signed)", async () => {
+    const r = await classify("git commit -S -m \"signed\"", rules, ctx);
+    expect(r?.rule.id).toBe("git-commit-message");
+    expect(r?.command).toBe("git commit -S -m \"signed\"");
+  });
+
+  it("matches git commit --amend --no-edit cleanly", async () => {
+    const r = await classify("git commit --amend --no-edit", rules, ctx);
+    expect(r?.rule.id).toBe("git-commit-amend-message");
+    expect(r?.command).toBe("git commit --amend --no-edit");
   });
 
   it("expands {{arg1}} for checkout branch", async () => {

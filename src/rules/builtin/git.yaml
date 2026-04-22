@@ -333,19 +333,19 @@ rules:
     match:
       type: regex
       patterns:
-        - "^git\\s+commit\\s+-m\\s+(.+)$"
-        - "^git\\s+commit\\s+-am\\s+(.+)$"
-        - "^git\\s+commit\\s+-a\\s+-m\\s+(.+)$"
-    action: { type: shell, command: "git commit {{input}}" }
+        - "^git\\s+commit\\s+(?:\\S+\\s+)*-m\\s+.+$"
+        - "^git\\s+commit\\s+(?:\\S+\\s+)*-am\\s+.+$"
+        - "^git\\s+commit\\s+(?:\\S+\\s+)*--message(?:=|\\s+).+$"
+    action: { type: shell, command: "{{input}}" }
     safety: write-confined
 
   - id: git-commit-amend-message
     match:
       type: regex
       patterns:
-        - "^git\\s+commit\\s+--amend\\s+-m\\s+(.+)$"
-        - "^git\\s+commit\\s+--amend\\s+--no-edit$"
-    action: { type: shell, command: "git commit {{input}}" }
+        - "^git\\s+commit\\s+--amend\\s+(?:\\S+\\s+)*-m\\s+.+$"
+        - "^git\\s+commit\\s+--amend\\s+--no-edit(?:\\s+\\S.*)?$"
+    action: { type: shell, command: "{{input}}" }
     safety: write-confined
 
   - id: git-checkout-branch
