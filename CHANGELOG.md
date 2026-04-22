@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
+## [0.5.1](https://github.com/oanhduong/token-ninja/compare/v0.5.0...v0.5.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **rules:** git commit action duplicated the base command ([47a0d50](https://github.com/oanhduong/token-ninja/commit/47a0d50c34d4111c190fcade418ebe53a22a8ff8))
+
 ## [0.5.0](https://github.com/oanhduong/token-ninja/compare/v0.4.1...v0.5.0) (2026-04-20)
 
 
