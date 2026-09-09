@@ -4,11 +4,13 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { routeOnce } from "../router/route-once.js";
+import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
+import { routeOnce, type RouteOnceResult } from "../router/route-once.js";
+import { VERSION } from "../version.js";
 
-const TOOL_NAME = "maybe_execute_locally";
+export const TOOL_NAME = "maybe_execute_locally";
 
-const TOOL_DEFINITION = {
+export const TOOL_DEFINITION = {
   name: TOOL_NAME,
   description:
     "Route a command through token-ninja. Returns {handled:true, stdout, stderr, exit_code, rule_id, tokens_saved_estimate} when a local rule matched, or {handled:false, reason} when the AI should handle it. Always call this BEFORE invoking your own LLM — if handled=true, use the output directly.",
@@ -35,9 +37,32 @@ const TOOL_DEFINITION = {
   },
 };
 
-export async function startMcpServer(): Promise<void> {
+export interface CallToolArgs {
+  command?: unknown;
+  context?: { cwd?: unknown; ai_tool?: unknown };
+}
+
+/**
+ * The `maybe_execute_locally` handler, extracted from transport wiring so it
+ * can be exercised directly in tests. Arguments arrive from an LLM, so every
+ * field is treated as untrusted: a non-string command degrades to "" (which
+ * routeOnce reports as `empty_command`) rather than throwing.
+ */
+export async function handleMaybeExecuteLocally(
+  args: CallToolArgs | undefined
+): Promise<RouteOnceResult> {
+  const command = typeof args?.command === "string" ? args.command : "";
+  const cwd = typeof args?.context?.cwd === "string" ? args.context.cwd : undefined;
+  return routeOnce(command, { cwd });
+}
+
+/**
+ * Build the MCP server with its handlers registered but no transport attached.
+ * `startMcpServer` connects it to stdio; tests connect it to an in-memory pair.
+ */
+export function createMcpServer(): Server {
   const server = new Server(
-    { name: "token-ninja", version: "0.5.1" }, // x-release-please-version
+    { name: "token-ninja", version: VERSION },
     { capabilities: { tools: {} } }
   );
 
@@ -48,22 +73,24 @@ export async function startMcpServer(): Promise<void> {
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     if (req.params.name !== TOOL_NAME) {
       return {
-        content: [{ type: "text", text: JSON.stringify({ handled: false, reason: "unknown_tool" }) }],
+        content: [
+          { type: "text", text: JSON.stringify({ handled: false, reason: "unknown_tool" }) },
+        ],
         isError: true,
       };
     }
-    const args = (req.params.arguments ?? {}) as {
-      command?: string;
-      context?: { cwd?: string; ai_tool?: string };
-    };
-    const command = typeof args.command === "string" ? args.command : "";
-    const result = await routeOnce(command, { cwd: args.context?.cwd });
+    const result = await handleMaybeExecuteLocally(req.params.arguments as CallToolArgs);
     return {
       content: [{ type: "text", text: JSON.stringify(result) }],
     };
   });
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  return server;
+}
+
+export async function startMcpServer(transport?: Transport): Promise<Server> {
+  const server = createMcpServer();
+  await server.connect(transport ?? new StdioServerTransport());
   // keep alive until stdin closes
+  return server;
 }
