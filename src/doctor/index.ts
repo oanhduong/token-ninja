@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { ADAPTERS, detectAllInstalledAiTools } from "../adapters/index.js";
-import { configDir, configPath, loadConfig } from "../config/user-config.js";
+import { configDir, configPath, loadConfig, userRulesDir } from "../config/user-config.js";
 import { loadRules } from "../rules/loader.js";
 import {
   BLOCK_END,
@@ -13,6 +13,7 @@ import {
 } from "../setup/shell-install.js";
 import { mcpTargets, TOKEN_NINJA_KEY } from "../setup/mcp-install.js";
 import { claudeSettingsPath, hookScriptPath } from "../setup/hook-install.js";
+import { VERSION } from "../version.js";
 
 export type CheckStatus = "ok" | "warn" | "missing" | "error" | "info";
 
@@ -93,7 +94,7 @@ async function checkRules(): Promise<CheckResult> {
 
 async function checkUserRules(): Promise<CheckResult> {
   const cfg = await loadConfig();
-  const dir = cfg.custom_rules_dir ?? join(configDir(), "rules");
+  const dir = userRulesDir(cfg);
   try {
     const entries = await readdir(dir);
     const yamls = entries.filter((n) => n.endsWith(".yaml") || n.endsWith(".yml"));
@@ -326,7 +327,6 @@ export async function runDoctor(): Promise<DoctorReport> {
   };
 }
 
-const VERSION = "0.4.1"; // x-release-please-version
 
 const STATUS_LABEL: Record<CheckStatus, string> = {
   ok: "ok",
