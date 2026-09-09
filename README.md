@@ -258,7 +258,7 @@ dangerous command past the classifier.
   including homoglyph, NFKC, chained, and base64-decoded evasion. Safety
   is validated **twice**: once on the raw prompt and once on the expanded
   command.
-- **Battle-tested**: 312 tests across 21 files covering classifier edge
+- **Battle-tested**: 391 tests across 28 files covering classifier edge
   cases, safety bypasses, conversational look-alikes, hook safeguards, and
   ≥99% rule coverage over 1090 real-world fixture commands. v8 coverage
   holds at 90%+ lines / 95%+ functions on all router/safety/rules code.
@@ -679,7 +679,7 @@ npm install
 npm run lint             # eslint flat config
 npm run typecheck        # tsc --noEmit
 npm run build            # tsc + copy YAML rules to dist/
-npm test                 # vitest run, 218 tests
+npm test                 # vitest run, 391 tests
 npm run test:watch       # watch mode
 npm run test:coverage    # v8 coverage, thresholds enforced
 ```
