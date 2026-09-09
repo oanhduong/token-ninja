@@ -51,12 +51,17 @@ for critical issues. Embargoed disclosure is fine.
 
 ## Dependency policy
 
-`npm audit` on **production** dependencies is a blocking CI gate — those are
+`npm audit` on **production** dependencies is the blocking CI gate — those are
 the packages installed on a user's machine next to a tool that runs shell
 commands. Dev-dependency advisories are reported but not blocking: the
 outstanding ones are in the vitest chain, and clearing them requires vitest 5,
 which needs Node >=22.12 and would drop this package's Node 20 support. They
 do not ship in the published tarball.
+
+`dependency-review-action` is configured but skipped: it requires Dependency
+graph to be enabled on the repository (and GitHub Advanced Security for a
+private repo). Enable that, then set the `DEPENDENCY_REVIEW=true` Actions
+variable to turn the job on — `.github/workflows/ci.yml` carries the steps.
 
 ## Hardening suggestions for operators
 

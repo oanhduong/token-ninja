@@ -728,8 +728,9 @@ CI gates (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 - `typecheck` — `tsc --noEmit`
 - `docs` — `rule-stats:check`; fails when the counts in this README drift
 - `audit` — blocking on production dependencies, reporting on dev
-- `dependency-review` — on PRs, flags high-severity and copyleft additions
-  (advisory until Dependency graph is enabled in repo settings)
+- `dependency-review` — on PRs, flags high-severity and copyleft additions.
+  Skipped until you enable Dependency graph in repo settings and set the
+  `DEPENDENCY_REVIEW=true` Actions variable; see the comment in `ci.yml`
 - `build` — emits `dist/`, copies YAML rules, runs `npm pack --dry-run`
 - `build (windows)` — compile + pack only; the suite is POSIX-only
 - `test` — Node 20 & 22 on `ubuntu-latest`, plus Node 20 on `macos-latest`
