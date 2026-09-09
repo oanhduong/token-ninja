@@ -73,7 +73,17 @@ export async function runRouter(input: string, opts: RouterOpts): Promise<number
   }
 
   logger.debug(`match ${match.rule.id} via ${match.matchedVia} → ${match.command}`);
-  const result = await execShell(match.command);
+  const cfg = await loadConfig();
+  // `requires_tty` rules (docker exec -it, …) must own the terminal: piping
+  // stdout to capture it makes them fail or hang. We give up the captured
+  // output — and therefore the byte-based savings estimate — for those.
+  const requiresTty =
+    match.rule.action.type === "shell" && match.rule.action.requires_tty === true;
+  const result = await execShell(match.command, {
+    inheritAll: requiresTty,
+    timeoutMs: requiresTty ? 0 : cfg.exec?.timeout_ms,
+    maxOutputBytes: cfg.exec?.max_output_bytes,
+  });
   await recordHit(match.rule, input, result);
 
   if (opts.json) {
@@ -88,7 +98,6 @@ export async function runRouter(input: string, opts: RouterOpts): Promise<number
       }) + "\n"
     );
   } else {
-    const cfg = await loadConfig();
     if (cfg.stats?.show_savings_on_exit !== false) {
       const saved = estimateTokensSaved(input, result, match.rule);
       const color = process.stderr.isTTY ? (c: string, s: string) => `\x1b[${c}m${s}\x1b[0m` : (_c: string, s: string) => s;
