@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
+## [0.5.2](https://github.com/oanhduong/token-ninja/compare/v0.5.1...v0.5.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* close the fallback injection bypass, bound local execution, widen CI ([#18](https://github.com/oanhduong/token-ninja/issues/18)) ([7d1235b](https://github.com/oanhduong/token-ninja/commit/7d1235b25180878c53070a5a4afaf7e0cf209b37))
+
 ## [0.5.1](https://github.com/oanhduong/token-ninja/compare/v0.5.0...v0.5.1) (2026-04-22)
 
 
