@@ -1,19 +1,18 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
 import type { LoadedRules, PrefixEntry, RegexEntry, Rule, RuleFile } from "./types.js";
 import { classify } from "../router/classifier.js";
+import {
+  invalidateConfigCache,
+  loadConfig,
+  userRulesDir,
+} from "../config/user-config.js";
 import { logger } from "../utils/logger.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const BUILTIN_DIR = resolve(here, "builtin");
-
-function userRulesDir(): string {
-  const xdg = process.env.XDG_CONFIG_HOME ?? join(homedir(), ".config");
-  return join(xdg, "token-ninja", "rules");
-}
 
 async function readYamlFile(path: string): Promise<RuleFile | null> {
   try {
@@ -64,7 +63,11 @@ export async function loadRules(): Promise<LoadedRules> {
         `then re-run. Without rules, every command falls back to the AI tool.`
     );
   }
-  const user = await loadDir(userRulesDir());
+  // `custom_rules_dir` is honoured here (it supports `~` and paths relative to
+  // the config dir); without this the option would be inert config that
+  // `ninja doctor` nonetheless reports as healthy.
+  const cfg = await loadConfig();
+  const user = await loadDir(userRulesDir(cfg));
   const all = [...builtin, ...user];
 
   const seen = new Set<string>();
@@ -148,8 +151,14 @@ export async function loadRules(): Promise<LoadedRules> {
   return cache;
 }
 
+/**
+ * Drop the memoized rule set. Also clears the config cache, since which
+ * directory the user rules come from is itself config — invalidating one
+ * without the other would reload rules from the stale old path.
+ */
 export function invalidateRulesCache(): void {
   cache = null;
+  invalidateConfigCache();
 }
 
 export async function listRules(opts: { domain?: string; json?: boolean }): Promise<void> {

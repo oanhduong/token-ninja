@@ -121,15 +121,20 @@ async function resolveCommand(
   //   {{branch}}/{{target}}/{{path}}/{{script}} → first positional
   //   {{pkg}}     → all positional args joined
   const argParts = splitArgsForTemplate(args);
+  // Every substitution below uses a FUNCTION replacement. With a string
+  // replacement, `$&`, `$'`, "$`" and `$1` inside the user's own input are
+  // interpreted as replacement patterns, so `git commit -m {{message}} --x`
+  // with the message `a$&b` expands to `git commit -m a{{message}}b --x`.
+  // The resolved command goes to a shell, so this has to be literal.
   cmd = cmd
-    .replace(/\{\{\s*input\s*\}\}/g, input)
-    .replace(/\{\{\s*args\s*\}\}/g, args.trim() || input)
-    .replace(/\{\{\s*message\s*\}\}/g, stripQuotes(args.trim()))
-    .replace(/\{\{\s*branch\s*\}\}/g, argParts[0] ?? "")
-    .replace(/\{\{\s*target\s*\}\}/g, argParts[0] ?? "")
-    .replace(/\{\{\s*path\s*\}\}/g, argParts[0] ?? "")
-    .replace(/\{\{\s*script\s*\}\}/g, argParts[0] ?? "")
-    .replace(/\{\{\s*pkg\s*\}\}/g, argParts.join(" "))
+    .replace(/\{\{\s*input\s*\}\}/g, () => input)
+    .replace(/\{\{\s*args\s*\}\}/g, () => args.trim() || input)
+    .replace(/\{\{\s*message\s*\}\}/g, () => stripQuotes(args.trim()))
+    .replace(/\{\{\s*branch\s*\}\}/g, () => argParts[0] ?? "")
+    .replace(/\{\{\s*target\s*\}\}/g, () => argParts[0] ?? "")
+    .replace(/\{\{\s*path\s*\}\}/g, () => argParts[0] ?? "")
+    .replace(/\{\{\s*script\s*\}\}/g, () => argParts[0] ?? "")
+    .replace(/\{\{\s*pkg\s*\}\}/g, () => argParts.join(" "))
     .replace(/\{\{\s*arg(\d)\s*\}\}/g, (_m, i: string) => argParts[Number(i) - 1] ?? "")
     .trim();
 

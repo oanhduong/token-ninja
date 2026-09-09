@@ -19,6 +19,12 @@ We treat any deny-list bypass as a security issue, including:
 - A rule whose action template expands user input into a deny-listed
   command (the router re-validates the resolved command, but if that
   check is bypassable, that's also a bug here).
+- Anything that lets a **rejected** command reach a shell. A deny-list hit
+  falls back to the AI tool, so that handoff is part of the security
+  boundary: it spawns the tool with the input as a single argv entry and no
+  shell. (Through 0.5.1 it interpolated the input into a shell command
+  unquoted, which made every deny pattern advisory — fixed in 0.6.0,
+  regression tests in `tests/fallback-injection.test.ts`.)
 
 Out of scope: slow regexes, cosmetic CLI issues, coverage reporting.
 
@@ -43,6 +49,20 @@ Include:
 We will acknowledge within 72 hours and aim to ship a fix within 14 days
 for critical issues. Embargoed disclosure is fine.
 
+## Dependency policy
+
+`npm audit` on **production** dependencies is the blocking CI gate — those are
+the packages installed on a user's machine next to a tool that runs shell
+commands. Dev-dependency advisories are reported but not blocking: the
+outstanding ones are in the vitest chain, and clearing them requires vitest 5,
+which needs Node >=22.12 and would drop this package's Node 20 support. They
+do not ship in the published tarball.
+
+`dependency-review-action` is configured but skipped: it requires Dependency
+graph to be enabled on the repository (and GitHub Advanced Security for a
+private repo). Enable that, then set the `DEPENDENCY_REVIEW=true` Actions
+variable to turn the job on — `.github/workflows/ci.yml` carries the steps.
+
 ## Hardening suggestions for operators
 
 - Keep `token-ninja` up to date.
@@ -51,3 +71,6 @@ for critical issues. Embargoed disclosure is fine.
 - Prefer `--dry-run` when evaluating new rules: `ninja --dry-run "<cmd>"`.
 - Point the MCP server only at trusted AI clients; the tool it exposes
   runs shell commands on the host.
+- Local execution is bounded by `exec.timeout_ms` and
+  `exec.max_output_bytes` in `config.yaml`. Lower them if you expose the MCP
+  server to an agent you do not fully control.

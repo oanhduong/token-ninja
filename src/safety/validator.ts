@@ -19,7 +19,17 @@ export interface SafetyVerdict {
  * "rеset") for the most common ASCII keywords.
  */
 export function validate(input: string): SafetyVerdict {
-  const candidates = [input, input.normalize("NFKC"), stripHomoglyphs(input)];
+  // For plain-ASCII input — which is nearly every real command — NFKC
+  // normalization and homoglyph stripping are both identity transforms, so
+  // the three candidates collapse to one. Deduping avoids running the whole
+  // deny list three times over identical text on the hot path.
+  const candidates: string[] = [input];
+  if (NON_ASCII_RE.test(input)) {
+    const nfkc = input.normalize("NFKC");
+    if (nfkc !== input) candidates.push(nfkc);
+    const stripped = stripHomoglyphs(input);
+    if (stripped !== input && stripped !== nfkc) candidates.push(stripped);
+  }
 
   for (const candidate of candidates) {
     // Pipe-to-shell, base64-decoded-shell etc span multiple segments, so we
@@ -51,6 +61,12 @@ export function validate(input: string): SafetyVerdict {
 
   return { allowed: true };
 }
+
+/**
+ * Both normalization passes are identity transforms on pure ASCII, so this
+ * guard lets the common case skip them entirely.
+ */
+const NON_ASCII_RE = /[^\x20-\x7E\t\r\n]/;
 
 /**
  * Replace common Cyrillic/Greek homoglyphs that look like ASCII letters with

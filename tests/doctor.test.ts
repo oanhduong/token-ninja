@@ -1,8 +1,8 @@
-import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { runDoctor } from "../src/doctor/index.js";
+import { printDoctor, runDoctor } from "../src/doctor/index.js";
 
 // The doctor reads XDG_CONFIG_HOME / HOME / TOKEN_NINJA_RC_FILE, plus the
 // Claude settings path override. We redirect every one of those to a fresh
@@ -142,5 +142,93 @@ describe("doctor", () => {
     const report = await runDoctor();
     const stats = report.checks.find((c) => c.name === "stats")!;
     expect(stats.status).toBe("info");
+  });
+});
+
+describe("doctor — reporting", () => {
+  it("reports the package version, not a stale literal", async () => {
+    const { home, xdg, rc, claudeSettings } = await makeSandbox();
+    process.env.HOME = home;
+    process.env.XDG_CONFIG_HOME = xdg;
+    process.env.TOKEN_NINJA_RC_FILE = rc;
+    process.env.CLAUDE_SETTINGS_PATH = claudeSettings;
+
+    const pkg = JSON.parse(
+      await readFile(new URL("../package.json", import.meta.url), "utf8")
+    ) as { version: string };
+    const report = await runDoctor();
+    expect(report.version).toBe(pkg.version);
+  });
+
+  it("--json emits the full report and exits non-zero on a fresh machine", async () => {
+    const { home, xdg, rc, claudeSettings } = await makeSandbox();
+    process.env.HOME = home;
+    process.env.XDG_CONFIG_HOME = xdg;
+    process.env.TOKEN_NINJA_RC_FILE = rc;
+    process.env.CLAUDE_SETTINGS_PATH = claudeSettings;
+
+    let out = "";
+    vi.spyOn(process.stdout, "write").mockImplementation((chunk: string | Uint8Array) => {
+      out += String(chunk);
+      return true;
+    });
+    const code = await printDoctor({ json: true });
+    expect(code).toBe(1); // shim + hook are missing
+    const parsed = JSON.parse(out) as { checks: Array<{ name: string }> };
+    expect(parsed.checks.length).toBeGreaterThan(5);
+  });
+
+  it("renders a human report with one line per check", async () => {
+    const { home, xdg, rc, claudeSettings } = await makeSandbox();
+    process.env.HOME = home;
+    process.env.XDG_CONFIG_HOME = xdg;
+    process.env.TOKEN_NINJA_RC_FILE = rc;
+    process.env.CLAUDE_SETTINGS_PATH = claudeSettings;
+
+    let out = "";
+    vi.spyOn(process.stdout, "write").mockImplementation((chunk: string | Uint8Array) => {
+      out += String(chunk);
+      return true;
+    });
+    await printDoctor();
+    expect(out).toContain("token-ninja doctor");
+    expect(out).toContain("shell shim");
+    expect(out).toContain("need attention");
+  });
+
+  it("surfaces a user rules directory once it has files", async () => {
+    const { home, xdg, rc, claudeSettings } = await makeSandbox();
+    process.env.HOME = home;
+    process.env.XDG_CONFIG_HOME = xdg;
+    process.env.TOKEN_NINJA_RC_FILE = rc;
+    process.env.CLAUDE_SETTINGS_PATH = claudeSettings;
+
+    const rulesDir = join(xdg, "token-ninja", "rules");
+    await mkdir(rulesDir, { recursive: true });
+    await writeFile(join(rulesDir, "mine.yaml"), "domain: mine\nrules: []\n", "utf8");
+
+    const report = await runDoctor();
+    const check = report.checks.find((c) => c.name === "user rules dir")!;
+    expect(check.detail).toContain("1 file");
+  });
+
+  it("reports stats once a stats file exists", async () => {
+    const { home, xdg, rc, claudeSettings } = await makeSandbox();
+    process.env.HOME = home;
+    process.env.XDG_CONFIG_HOME = xdg;
+    process.env.TOKEN_NINJA_RC_FILE = rc;
+    process.env.CLAUDE_SETTINGS_PATH = claudeSettings;
+
+    await mkdir(join(xdg, "token-ninja"), { recursive: true });
+    await writeFile(
+      join(xdg, "token-ninja", "stats.json"),
+      JSON.stringify({ version: 1, total_hits: 7, total_fallbacks: 2, total_tokens_saved_estimate: 1234 }),
+      "utf8"
+    );
+
+    const report = await runDoctor();
+    const stats = report.checks.find((c) => c.name === "stats")!;
+    expect(stats.status).toBe("ok");
+    expect(stats.detail).toContain("7 hits");
   });
 });

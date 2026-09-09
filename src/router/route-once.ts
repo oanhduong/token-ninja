@@ -2,6 +2,7 @@ import { loadRules } from "../rules/loader.js";
 import { classify } from "./classifier.js";
 import { execShell } from "./executor.js";
 import { validate } from "../safety/validator.js";
+import { loadConfig } from "../config/user-config.js";
 import {
   estimateTokensSaved,
   recordFallback,
@@ -36,10 +37,17 @@ export type RouteOnceResult =
       rule_id: string;
       matched_via: string;
       tokens_saved_estimate: number;
+      truncated?: boolean;
+      timed_out?: boolean;
     }
   | {
       handled: false;
-      reason: "empty_command" | "safety_block" | "no_match" | "low_confidence";
+      reason:
+        | "empty_command"
+        | "safety_block"
+        | "no_match"
+        | "low_confidence"
+        | "requires_tty";
       detail?: string;
     };
 
@@ -79,6 +87,14 @@ export async function routeOnce(
     return { handled: false, reason: "low_confidence", detail: match.matchedVia };
   }
 
+  // Interactive rules (docker exec -it, kubectl exec -it) need a real TTY on
+  // stdin AND stdout. This path captures both, so the command would either
+  // hang or die with "the input device is not a TTY". Hand it back instead.
+  if (match.rule.action.type === "shell" && match.rule.action.requires_tty) {
+    await recordFallback("requires_tty");
+    return { handled: false, reason: "requires_tty", detail: match.rule.id };
+  }
+
   const safety2 = validate(match.command);
   if (!safety2.allowed) {
     await recordFallback("safety_block");
@@ -89,10 +105,13 @@ export async function routeOnce(
     };
   }
 
+  const cfg = await loadConfig();
   const result = await execShell(match.command, {
     cwd,
     captureOnly: true,
     forceColor: opts.forceColor === true,
+    timeoutMs: cfg.exec?.timeout_ms,
+    maxOutputBytes: cfg.exec?.max_output_bytes,
   });
   const tokens = estimateTokensSaved(command, result, match.rule);
   await recordHit(match.rule, command, result);
@@ -105,5 +124,7 @@ export async function routeOnce(
     rule_id: match.rule.id,
     matched_via: match.matchedVia,
     tokens_saved_estimate: tokens,
+    ...(result.truncated ? { truncated: true } : {}),
+    ...(result.timedOut ? { timed_out: true } : {}),
   };
 }

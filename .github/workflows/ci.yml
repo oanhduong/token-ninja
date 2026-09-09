@@ -28,6 +28,73 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
 
+  docs:
+    name: doc counts in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Fails when README/CLAUDE.md/CONTRIBUTING.md still claim an old rule or
+      # test count. Fix with: npm run rule-stats:sync
+      - run: npm run rule-stats:check
+
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Blocking: these are the packages installed on a user's machine
+      # alongside a tool that runs shell commands, so a compromised
+      # transitive dependency is about as bad as it gets.
+      - name: production dependencies (blocking)
+        run: npm audit --omit=dev --audit-level=high
+      # Reporting only: the outstanding dev advisories are in the vitest
+      # chain, and clearing them requires vitest 5, which needs Node
+      # >=22.12 and would drop this package's stated Node 20 support. They
+      # do not ship to users. Revisit when the Node 20 floor moves.
+      - name: dev dependencies (report only)
+        run: npm audit --audit-level=high || true
+
+  dependency-review:
+    name: dependency review
+    runs-on: ubuntu-latest
+    # Opt-in, because the action cannot run at all until Dependency graph is
+    # enabled for the repository — it exits with "Dependency review is not
+    # supported on this repository", which no diff can fix and which would
+    # sit red on every PR. Job-level continue-on-error does not help: it
+    # stops the workflow from failing but the check run is still reported as
+    # a failure. Skipping is the honest state, since a step-level
+    # continue-on-error would report green for a review that never ran.
+    #
+    # To turn it on:
+    #   1. Settings → Code security and analysis → enable Dependency graph
+    #      (a private repo additionally needs GitHub Advanced Security).
+    #   2. Settings → Secrets and variables → Actions → Variables:
+    #      set DEPENDENCY_REVIEW = true
+    #
+    # Until then the blocking supply-chain gate is the `audit` job above.
+    if: github.event_name == 'pull_request' && vars.DEPENDENCY_REVIEW == 'true'
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          # Copyleft licences would change the terms this MIT package ships
+          # under, so flag them rather than discovering it at release time.
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0
+
   build:
     name: build
     runs-on: ubuntu-latest
@@ -42,8 +109,30 @@ jobs:
       - name: verify packed artifacts
         run: |
           test -f dist/cli.js
+          test -f dist/index.js
+          test -f dist/index.d.ts
           test -d dist/rules/builtin
           npm pack --dry-run
+      - name: library entry must not execute the CLI
+        run: node -e "import('./dist/index.js').then(m => { if (!m.routeOnce) process.exit(1) })"
+
+  build-windows:
+    # token-ninja's shims and setup flow are POSIX-only (see README →
+    # Platform support), so we do not run the suite here. We do compile and
+    # pack, because src/ carries win32 branches that would otherwise only
+    # break for users.
+    name: build (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
 
   test:
     name: test (node ${{ matrix.node }}, ${{ matrix.os }})
@@ -75,3 +164,20 @@ jobs:
           path: coverage/
           retention-days: 7
           if-no-files-found: ignore
+
+  bench:
+    name: benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      # Budgets are scaled by BENCH_FACTOR when CI is set, so this catches
+      # algorithmic regressions without failing on runner noise.
+      - run: npm run bench
+        env:
+          CI: "true"

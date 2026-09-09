@@ -1,15 +1,20 @@
 #!/usr/bin/env node
-// Postinstall hook: runs `ninja setup` after `npm install -g token-ninja`.
+// Postinstall hook for `npm install -g token-ninja`.
+//
+// It prints how to finish the install. It does NOT run `ninja setup` on its
+// own, because setup edits the user's shell rc file, registers MCP servers
+// and installs a Claude Code hook — side effects outside the package
+// directory that nobody consented to by typing `npm install`. Many orgs also
+// run installs with `--ignore-scripts`, so a package that only works after a
+// postinstall ran is a package that silently half-works there.
+//
+// Opt in to the old behaviour with TOKEN_NINJA_AUTO_SETUP=1.
 //
 // Design goals:
 //   * Never fail the install (exit 0 always).
-//   * Only touch the user's shell rc when this looks like a real install on a
-//     user's machine — skip in CI, skip in non-global local installs, skip
-//     when npm_config_ignore_scripts is set or we can't detect a writable TTY.
+//   * Stay silent for dependency/local installs — only speak up for a global
+//     install a human just typed.
 //   * Idempotent: safe to run repeatedly.
-//   * Opt-out via TOKEN_NINJA_SKIP_POSTINSTALL=1.
-//
-// The user can always re-run `ninja setup` manually if we skip.
 
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -23,20 +28,38 @@ function shouldSkip() {
   if (env.CI) return "CI environment detected";
   if (env.NODE_ENV === "test") return "NODE_ENV=test";
   // npm sets npm_config_global=true for `npm i -g`. For dep installs and
-  // `npm install` in the project itself it's unset/false — editing the
-  // user's rc file there would be very surprising, so require an explicit
-  // global install.
+  // `npm install` in the project itself it's unset/false — printing a setup
+  // banner there would be noise.
   if (env.npm_config_global !== "true") return "not a global install";
   return null;
+}
+
+function printNextSteps() {
+  process.stdout.write(
+    [
+      "",
+      "token-ninja installed. One more step:",
+      "",
+      "  ninja setup     # writes shell shims, registers MCP, installs the Claude Code hook",
+      "  ninja doctor    # verify the install",
+      "",
+      "`ninja setup` is not run automatically because it edits your shell rc file.",
+      "",
+    ].join("\n")
+  );
 }
 
 async function main() {
   const reason = shouldSkip();
   if (reason) {
-    // Stay silent in common cases; users can run `ninja setup` themselves.
     if (process.env.TOKEN_NINJA_POSTINSTALL_DEBUG) {
       process.stdout.write(`token-ninja postinstall skipped: ${reason}\n`);
     }
+    return;
+  }
+
+  if (process.env.TOKEN_NINJA_AUTO_SETUP !== "1") {
+    printNextSteps();
     return;
   }
 
