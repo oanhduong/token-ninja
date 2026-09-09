@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
-## [0.5.2](https://github.com/oanhduong/token-ninja/compare/v0.5.1...v0.5.2) (2026-09-09)
+## [0.6.0](https://github.com/oanhduong/token-ninja/compare/v0.5.1...v0.6.0) (2026-09-09)
 
 
 ### Bug Fixes
