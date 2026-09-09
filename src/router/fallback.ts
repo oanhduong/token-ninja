@@ -1,6 +1,7 @@
 import { execa } from "execa";
-import { loadConfig, configPath } from "../config/user-config.js";
+import { loadConfig, configPath, DEFAULT_FALLBACK_COMMAND } from "../config/user-config.js";
 import { ADAPTERS, detectAiTool } from "../adapters/index.js";
+import { shellQuote } from "../utils/shell-parse.js";
 import { logger } from "../utils/logger.js";
 
 export interface FallbackOpts {
@@ -13,6 +14,19 @@ export interface FallbackOpts {
  * Pass the input to the configured AI tool. Returns the AI tool's exit code.
  * If no AI tool is configured or found on PATH, we print an error and return
  * a non-zero code so the wrapper script fails loudly.
+ *
+ * SECURITY: the input arriving here has typically just been REJECTED by the
+ * safety validator (`rm -rf …`, `sudo …`, `curl … | sh`), or matched no rule
+ * at all. It is attacker-shaped by construction, so it must never reach a
+ * shell as bare text. Two paths:
+ *
+ *   1. Default template — spawn the tool directly with the input as a single
+ *      argv entry. No shell is involved, so there is nothing to inject into.
+ *   2. Custom `fallback_command` — a shell is unavoidable (users put pipes and
+ *      flags in there), so every interpolated value is shell-quoted first.
+ *
+ * Either way `echo 'hi'; touch /tmp/pwned` reaches the AI tool as one opaque
+ * argument instead of being executed.
  */
 export async function fallbackToAi(input: string, opts: FallbackOpts): Promise<number> {
   if (opts.noFallback) {
@@ -42,17 +56,20 @@ export async function fallbackToAi(input: string, opts: FallbackOpts): Promise<n
 
   logger.debug(`fallback → ${tool}: ${input}`);
 
-  const template = config.fallback_command ?? "{{tool}} {{input}}";
-  const rendered = template
-    .replace(/\{\{\s*tool\s*\}\}/g, tool)
-    .replace(/\{\{\s*input\s*\}\}/g, input);
+  const template = (config.fallback_command ?? DEFAULT_FALLBACK_COMMAND).trim();
 
   try {
-    const child = execa(rendered, {
-      shell: true,
-      stdio: "inherit",
-      reject: false,
-    });
+    const child =
+      template === DEFAULT_FALLBACK_COMMAND
+        ? // No shell: the input cannot be re-parsed as shell syntax.
+          execa(tool, [input], { stdio: "inherit", reject: false })
+        : // Custom template: a shell is required, so quote every substitution.
+          execa(
+            template
+              .replace(/\{\{\s*tool\s*\}\}/g, shellQuote(tool))
+              .replace(/\{\{\s*input\s*\}\}/g, shellQuote(input)),
+            { shell: true, stdio: "inherit", reject: false }
+          );
     const result = await child;
     return typeof result.exitCode === "number" ? result.exitCode : 0;
   } catch (err) {

