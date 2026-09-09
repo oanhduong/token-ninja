@@ -1,8 +1,9 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-import { configDir } from "../config/user-config.js";
+import { configDir, loadConfig } from "../config/user-config.js";
 import type { Rule } from "../rules/types.js";
 import type { ExecResult } from "../router/executor.js";
+import { logger } from "../utils/logger.js";
 import { join } from "node:path";
 
 interface StatsFile {
@@ -45,20 +46,68 @@ function statsPath(): string {
   return join(configDir(), "stats.json");
 }
 
+/**
+ * Read the stats file. A missing file is normal (first run). A file that
+ * exists but will not parse is NOT normal — it means a previous write was
+ * interrupted, or two processes raced. Returning fresh counters silently
+ * would erase the user's whole history, so we move the bad file aside first
+ * and say so.
+ */
 async function readStats(): Promise<StatsFile> {
+  const path = statsPath();
+  let raw: string;
   try {
-    const raw = await readFile(statsPath(), "utf8");
+    raw = await readFile(path, "utf8");
+  } catch {
+    return emptyStats();
+  }
+  try {
     const parsed = JSON.parse(raw) as StatsFile;
     if (parsed.version !== 1) return emptyStats();
     return parsed;
-  } catch {
+  } catch (err) {
+    const backup = `${path}.corrupt-${Date.now()}`;
+    try {
+      await rename(path, backup);
+      logger.warn(
+        `stats file was unreadable (${(err as Error).message}); ` +
+          `moved to ${backup} and started fresh counters`
+      );
+    } catch {
+      /* best effort — never block the command the user actually ran */
+    }
     return emptyStats();
   }
 }
 
+/**
+ * Write the stats file atomically: a temp file in the same directory, then a
+ * rename. `rename(2)` is atomic within a filesystem, so a reader never sees a
+ * half-written file even when the shim, the Claude Code hook and the MCP
+ * server all record a hit at the same moment. The temp name must be unique
+ * per CALL, not per process: two awaits in flight inside one process would
+ * otherwise share a scratch file and the second rename would find it already
+ * moved away.
+ */
+let tmpCounter = 0;
+
 async function writeStats(s: StatsFile): Promise<void> {
-  await mkdir(dirname(statsPath()), { recursive: true });
-  await writeFile(statsPath(), JSON.stringify(s, null, 2), "utf8");
+  const path = statsPath();
+  await mkdir(dirname(path), { recursive: true });
+  const tmp = `${path}.${process.pid}.${tmpCounter++}.${Math.random().toString(36).slice(2, 8)}.tmp`;
+  try {
+    await writeFile(tmp, JSON.stringify(s, null, 2), "utf8");
+    await rename(tmp, path);
+  } catch (err) {
+    await unlink(tmp).catch(() => {});
+    throw err;
+  }
+}
+
+/** Telemetry is opt-out via `stats.enabled: false` in config.yaml. */
+async function statsEnabled(): Promise<boolean> {
+  const cfg = await loadConfig();
+  return cfg.stats?.enabled !== false;
 }
 
 /**
@@ -79,6 +128,7 @@ export async function recordHit(
   input: string,
   result: ExecResult
 ): Promise<void> {
+  if (!(await statsEnabled())) return;
   const s = await readStats();
   const tokens = estimateTokensSaved(input, result, rule);
   s.total_hits += 1;
@@ -100,6 +150,7 @@ export async function recordHit(
 }
 
 export async function recordFallback(reason: string): Promise<void> {
+  if (!(await statsEnabled())) return;
   const s = await readStats();
   s.total_fallbacks += 1;
   if (reason === "safety_block") s.total_safety_blocks += 1;
