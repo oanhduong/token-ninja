@@ -80,6 +80,7 @@ gets out of the way for everything else.
 - [Configuration](#configuration)
 - [Safety model](#safety-model)
 - [Platform support](#platform-support)
+- [Upgrading from 0.5.x](#upgrading-from-05x)
 - [Commands](#commands)
 - [Benchmarks](#benchmarks)
 - [Development](#development)
@@ -688,6 +689,40 @@ The package still compiles and packs on Windows in CI so the win32 code paths
 in `src/` cannot rot, and the MCP server itself is portable — a Windows user
 can register `ninja mcp` by hand and use the tool through their AI client
 without the shell shim.
+
+## Upgrading from 0.5.x
+
+0.6.0 fixes a security bug and changes four behaviours you may be relying on.
+
+**1. A rejected command can no longer reach a shell.** Through 0.5.1 the AI
+fallback interpolated your input into a shell command unquoted, so a command
+the safety validator had just *blocked* executed anyway one process later.
+Upgrade for this reason if for no other.
+
+**2. `npm install -g` no longer configures anything.** Run `ninja setup`
+yourself afterwards (`ninja doctor` to verify). Set `TOKEN_NINJA_AUTO_SETUP=1`
+before installing to keep the old behaviour.
+
+**3. Deep imports are gone.** The package now has an `exports` map and a real
+library entry, so importing it no longer executes the CLI:
+
+```diff
+- import { routeOnce } from "token-ninja/dist/router/route-once.js";
++ import { routeOnce } from "token-ninja";
+```
+
+Any other `token-ninja/dist/...` path now fails with
+`ERR_PACKAGE_PATH_NOT_EXPORTED`. The root export ships TypeScript
+declarations.
+
+**4. Command substitution falls back to the AI.** Commands containing `$(…)`,
+backticks or `<(…)` are refused locally, because nothing textual can predict
+what they expand to. They are passed to your AI tool instead of being run —
+so a command that used to execute locally may now cost tokens.
+
+Also new: `exec.timeout_ms` and `exec.max_output_bytes` bound every local
+command (see [Configuration](#configuration)), and `custom_rules_dir` /
+`stats.enabled` finally do what the docs always said they did.
 
 ## Commands
 
