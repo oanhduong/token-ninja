@@ -265,7 +265,7 @@ dangerous command past the classifier.
   including homoglyph, NFKC, chained, and base64-decoded evasion. Safety
   is validated **twice**: once on the raw prompt and once on the expanded
   command.
-- **Battle-tested**: 396 tests across 28 files covering classifier edge
+- **Battle-tested**: 398 tests across 28 files covering classifier edge
   cases, safety bypasses, conversational look-alikes, hook safeguards, and
   ≥99% rule coverage over 1090 real-world fixture commands. v8 coverage
   holds at 90%+ lines / 95%+ functions on all router/safety/rules code.
@@ -618,9 +618,12 @@ a command that never exits, and a command that prints 40 MB would spend all
 of it as context tokens. Set either to `0` to disable that bound.
 
 `fallback_command` is a **shell** template, used only when you change it from
-the default. `{{tool}}` and `{{input}}` are shell-quoted before substitution,
-so a command that failed the safety check cannot break out of the quoting —
-but everything else you put in the template runs as you wrote it.
+the default. `{{tool}}` and `{{input}}` expand to environment *references*
+(`"$TOKEN_NINJA_AI_TOOL"`, `"$TOKEN_NINJA_INPUT"`) and the values are handed
+to the child process through its environment — they never become part of the
+command text, so a command that failed the safety check has nothing to break
+out of. Everything else you put in the template runs as you wrote it. Custom
+templates are POSIX-only; on Windows the AI tool is invoked directly.
 
 Environment variables:
 
@@ -659,9 +662,12 @@ human can review the explanation before anything runs.
 **The fallback does not re-introduce what the deny-list rejected.** A blocked
 command is handed to your AI tool as a single argument, with no shell in
 between — so `git status; rm -rf ~` reaches Claude as one opaque string to
-explain, not as two commands to run. (Before 0.6.0 this path interpolated the
-input into a shell command unquoted, which made every deny pattern advisory;
-`tests/fallback-injection.test.ts` now covers it.)
+explain, not as two commands to run. If you set a custom `fallback_command`,
+a shell is involved but the input still is not part of the command text: it
+arrives through the environment, and POSIX shells do not rescan an expanded
+value, so `$(…)` and backticks inside it stay literal. (Before 0.6.0 this
+path interpolated the input into a shell command unquoted, which made every
+deny pattern advisory; `tests/fallback-injection.test.ts` now covers it.)
 
 Rules marked `requires_tty` (`docker exec -it`, `kubectl exec -it`) are handed
 back rather than run headless, since capturing their output would either hang
@@ -752,7 +758,7 @@ npm install
 npm run lint             # eslint flat config
 npm run typecheck        # tsc --noEmit
 npm run build            # tsc + copy YAML rules to dist/
-npm test                 # vitest run, 396 tests
+npm test                 # vitest run, 398 tests
 npm run test:watch       # watch mode
 npm run test:coverage    # v8 coverage, thresholds enforced
 npm run bench            # benchmark budgets (not part of npm test)

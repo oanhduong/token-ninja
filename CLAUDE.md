@@ -12,7 +12,7 @@ Anything it doesn't confidently recognize falls back to the user's AI tool
 
 - 765 built-in rules across 46 tool domains
 - Classifier hot path: ~19 µs/call; safety validator: ~4.5 µs/call (warm JIT)
-- 396 tests across 28 test files; 88.0% lines / 81.0% branches /
+- 398 tests across 28 test files; 88.0% lines / 81.0% branches /
   94.0% functions (v8 coverage over all of `src/**` except entry points and
   type-only modules; thresholds enforced at 86 / 79 / 86 / 92)
 
@@ -53,7 +53,7 @@ src/
     logger.ts                # ANSI-colored stderr
 hooks/
   claude-code-user-prompt.cjs # shipped hook: reads a prompt, calls `ninja route`, short-circuits the model on hit
-tests/                       # 28 test files, 396 tests, vitest + v8 coverage
+tests/                       # 28 test files, 398 tests, vitest + v8 coverage
                              # benchmark.test.ts runs via `npm run bench`, not `npm test`
   fixtures/real-commands.txt # ≥85% of these must classify (rules-coverage.test.ts)
 ```
@@ -63,7 +63,7 @@ tests/                       # 28 test files, 396 tests, vitest + v8 coverage
 ```bash
 npm run build            # tsc + copy YAML rules to dist/rules/builtin/
 npm run dev              # tsc -w
-npm test                 # vitest run (all 396 tests; benchmarks excluded)
+npm test                 # vitest run (all 398 tests; benchmarks excluded)
 npm run test:watch
 npm run test:coverage    # v8, thresholds: 86% lines / 79% branches / 92% functions
 npm run bench            # benchmark budgets only (vitest.bench.config.ts)
@@ -79,11 +79,15 @@ npm run typecheck        # tsc --noEmit
   `validate()`; both must pass.
 - **The fallback must never re-expose what the deny-list rejected.** A
   blocked command goes straight to `fallbackToAi`, so that path spawns the AI
-  tool with the input as a single argv entry and no shell. Only a non-default
-  `fallback_command` uses a shell, and then `{{tool}}`/`{{input}}` are passed
-  through `shellQuote()` first. Regression coverage lives in
-  `tests/fallback-injection.test.ts` — do not "simplify" it back to
-  `execa(str, { shell: true })`.
+  tool with the input as a single argv entry and no shell. A non-default
+  `fallback_command` does use a shell, but `{{tool}}`/`{{input}}` expand to
+  env *references* and the values travel in `env` — the input is never part
+  of the command text. Do not "simplify" this back to interpolating the value
+  (quoted or not); regression coverage is `tests/fallback-injection.test.ts`.
+- **Never substitute user data with a STRING replacement.** `String.replace`
+  interprets `$&`, `$'`, "$`" and `$1` in the replacement, and every template
+  expansion here feeds a shell. Use a function replacement. This shipped as a
+  real bug in both `fallback.ts` and `classifier.resolveCommand`.
 - **Command substitution is denied, not parsed.** `$(…)`, backticks and
   `<(…)` are deny patterns because the validator cannot know what they expand
   to. No built-in rule may emit them, or the second `validate()` will block

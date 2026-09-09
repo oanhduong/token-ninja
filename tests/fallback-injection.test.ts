@@ -104,12 +104,13 @@ describe("fallbackToAi — shell injection", () => {
     expect(code).not.toBe(0);
   });
 
-  // CodeQL flagged the custom-template path as an indirect uncontrolled
-  // command line, and it was right for a reason the alert did not spell out:
-  // `String.replace` with a STRING replacement interprets `$&`, `$'`, "$`"
-  // and `$1`. Since shellQuote's output was the replacement, an input holding
-  // `$'` spliced the rest of the template inside its own quotes and escaped
-  // them. Function replacements make the substitution literal.
+  // CodeQL flagged the custom-template path twice. The first alert was a
+  // true positive: `String.replace` with a STRING replacement interprets
+  // `$&`, `$'`, "$`" and `$1`, and the shell-quoted value WAS the
+  // replacement, so an input holding `$'` spliced the rest of the template
+  // inside its own quotes and escaped them. The values now travel through
+  // the environment and the placeholders expand to references, so there is
+  // no quoting left to get wrong.
   it("does not let $' in the input splice the template and break quoting", async () => {
     await writeConfig(`fallback_command: "{{tool}} --print {{input}} --quiet"\n`);
     const payload = `a$'; touch ${marker}; echo '`;
@@ -125,6 +126,25 @@ describe("fallbackToAi — shell injection", () => {
     await fallbackToAi(payload, { aiOverride: "fakeai" });
     const argv = JSON.parse(await readFile(argvLog, "utf8")) as string[];
     expect(argv).toEqual(["--print", payload, "--quiet"]);
+  });
+
+  it("keeps command substitution inert inside a shell template", async () => {
+    await writeConfig(`fallback_command: "{{tool}} --print {{input}} --quiet"\n`);
+    const payload = `a$(touch ${marker})b \`touch ${marker}\``;
+    await fallbackToAi(payload, { aiOverride: "fakeai" });
+    expect(existsSync(marker)).toBe(false);
+    const argv = JSON.parse(await readFile(argvLog, "utf8")) as string[];
+    expect(argv).toEqual(["--print", payload, "--quiet"]);
+  });
+
+  it("does not put the input into the command string at all", async () => {
+    // A shell template that echoes the command it was given would reveal an
+    // interpolated value; the reference form keeps the payload out of it.
+    await writeConfig(`fallback_command: "{{tool}} --print {{input}}"\n`);
+    const payload = "$(id) && whoami";
+    await fallbackToAi(payload, { aiOverride: "fakeai" });
+    const argv = JSON.parse(await readFile(argvLog, "utf8")) as string[];
+    expect(argv).toEqual(["--print", payload]);
   });
 
   it("still forwards a benign command normally", async () => {

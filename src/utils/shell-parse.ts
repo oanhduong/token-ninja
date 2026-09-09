@@ -110,24 +110,3 @@ export function normalizeNl(input: string): string {
     .replace(/\s+/g, " ")
     .trim();
 }
-
-/**
- * Quote a string so a POSIX shell treats it as a single literal argument.
- * Wraps in single quotes and escapes embedded single quotes via the standard
- * `'\''` dance. On Windows (cmd.exe) single quotes are not special, so we fall
- * back to double quotes with `""` escaping and strip characters cmd.exe cannot
- * quote at all.
- *
- * Used by the AI fallback path: the input reaching it has usually just FAILED
- * the safety validator, so it must never be interpolated into a shell command
- * unquoted.
- */
-export function shellQuote(s: string): string {
-  if (s === "") return "''";
-  if (process.platform === "win32") {
-    // cmd.exe has no escape for %, and newlines cannot be quoted at all.
-    const cleaned = s.replace(/[\r\n%]/g, " ");
-    return `"${cleaned.replace(/"/g, '""')}"`;
-  }
-  return `'${s.replace(/'/g, `'\\''`)}'`;
-}
