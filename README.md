@@ -265,7 +265,7 @@ dangerous command past the classifier.
   including homoglyph, NFKC, chained, and base64-decoded evasion. Safety
   is validated **twice**: once on the raw prompt and once on the expanded
   command.
-- **Battle-tested**: 391 tests across 28 files covering classifier edge
+- **Battle-tested**: 396 tests across 28 files covering classifier edge
   cases, safety bypasses, conversational look-alikes, hook safeguards, and
   ≥99% rule coverage over 1090 real-world fixture commands. v8 coverage
   holds at 90%+ lines / 95%+ functions on all router/safety/rules code.
@@ -729,6 +729,7 @@ CI gates (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 - `docs` — `rule-stats:check`; fails when the counts in this README drift
 - `audit` — blocking on production dependencies, reporting on dev
 - `dependency-review` — on PRs, flags high-severity and copyleft additions
+  (advisory until Dependency graph is enabled in repo settings)
 - `build` — emits `dist/`, copies YAML rules, runs `npm pack --dry-run`
 - `build (windows)` — compile + pack only; the suite is POSIX-only
 - `test` — Node 20 & 22 on `ubuntu-latest`, plus Node 20 on `macos-latest`
@@ -750,7 +751,7 @@ npm install
 npm run lint             # eslint flat config
 npm run typecheck        # tsc --noEmit
 npm run build            # tsc + copy YAML rules to dist/
-npm test                 # vitest run, 391 tests
+npm test                 # vitest run, 396 tests
 npm run test:watch       # watch mode
 npm run test:coverage    # v8 coverage, thresholds enforced
 npm run bench            # benchmark budgets (not part of npm test)

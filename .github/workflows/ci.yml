@@ -68,6 +68,14 @@ jobs:
     name: dependency review
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    # Advisory until Dependency graph is switched on for this repository
+    # (Settings → Code security and analysis; private repos additionally need
+    # GitHub Advanced Security). Without it the action cannot run at all and
+    # exits with "Dependency review is not supported on this repository",
+    # which would block every PR for a reason no diff can fix. The blocking
+    # supply-chain gate is the `audit` job above. Drop this line once the
+    # setting is on.
+    continue-on-error: true
     permissions:
       contents: read
       pull-requests: read

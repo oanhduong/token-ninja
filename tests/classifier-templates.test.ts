@@ -82,3 +82,32 @@ describe("classifier — no infinite confusion", () => {
     expect(await classify("   ", rules, ctx)).toBeNull();
   });
 });
+
+describe("template expansion is literal, not a replacement pattern", () => {
+  // `String.replace(re, str)` interprets `$&`, `$'`, "$`" and `$1` in the
+  // replacement. The substituted values here are user input, and the result
+  // is handed to a shell, so any interpretation is a correctness bug at best.
+  it("keeps $& in a commit message instead of re-inserting the placeholder", async () => {
+    const rules = await loadRules();
+    const result = await classify(`git commit -m "fix: a$&b"`, rules, { cwd: process.cwd() });
+    expect(result).not.toBeNull();
+    expect(result!.command).toContain("a$&b");
+    expect(result!.command).not.toContain("{{");
+  });
+
+  it("keeps $' from splicing the rest of the template", async () => {
+    const rules = await loadRules();
+    const result = await classify(`git commit -m "fix: a$'b"`, rules, { cwd: process.cwd() });
+    expect(result).not.toBeNull();
+    expect(result!.command).toContain("a$'b");
+    expect(result!.command).not.toContain("{{");
+  });
+
+  it("keeps a $1-looking argument literal", async () => {
+    const rules = await loadRules();
+    const result = await classify(`git commit -m "use $1 not $2"`, rules, { cwd: process.cwd() });
+    expect(result).not.toBeNull();
+    expect(result!.command).toContain("$1");
+    expect(result!.command).toContain("$2");
+  });
+});

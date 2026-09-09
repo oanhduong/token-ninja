@@ -66,8 +66,12 @@ export async function fallbackToAi(input: string, opts: FallbackOpts): Promise<n
         : // Custom template: a shell is required, so quote every substitution.
           execa(
             template
-              .replace(/\{\{\s*tool\s*\}\}/g, shellQuote(tool))
-              .replace(/\{\{\s*input\s*\}\}/g, shellQuote(input)),
+              // Function replacements, NOT strings: a string replacement
+              // interprets `$&`, `$'`, "$`" and `$1`, so an input containing
+              // `$'` would splice the rest of the template into the middle of
+              // its own quotes and break straight back out of them.
+              .replace(/\{\{\s*tool\s*\}\}/g, () => shellQuote(tool))
+              .replace(/\{\{\s*input\s*\}\}/g, () => shellQuote(input)),
             { shell: true, stdio: "inherit", reject: false }
           );
     const result = await child;

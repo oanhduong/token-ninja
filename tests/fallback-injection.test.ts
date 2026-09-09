@@ -104,6 +104,29 @@ describe("fallbackToAi — shell injection", () => {
     expect(code).not.toBe(0);
   });
 
+  // CodeQL flagged the custom-template path as an indirect uncontrolled
+  // command line, and it was right for a reason the alert did not spell out:
+  // `String.replace` with a STRING replacement interprets `$&`, `$'`, "$`"
+  // and `$1`. Since shellQuote's output was the replacement, an input holding
+  // `$'` spliced the rest of the template inside its own quotes and escaped
+  // them. Function replacements make the substitution literal.
+  it("does not let $' in the input splice the template and break quoting", async () => {
+    await writeConfig(`fallback_command: "{{tool}} --print {{input}} --quiet"\n`);
+    const payload = `a$'; touch ${marker}; echo '`;
+    await fallbackToAi(payload, { aiOverride: "fakeai" });
+    expect(existsSync(marker)).toBe(false);
+    const argv = JSON.parse(await readFile(argvLog, "utf8")) as string[];
+    expect(argv).toEqual(["--print", payload, "--quiet"]);
+  });
+
+  it("passes $& and $` through literally", async () => {
+    await writeConfig(`fallback_command: "{{tool}} --print {{input}} --quiet"\n`);
+    const payload = "why does $& differ from $` here";
+    await fallbackToAi(payload, { aiOverride: "fakeai" });
+    const argv = JSON.parse(await readFile(argvLog, "utf8")) as string[];
+    expect(argv).toEqual(["--print", payload, "--quiet"]);
+  });
+
   it("still forwards a benign command normally", async () => {
     const code = await fallbackToAi("explain this repo", { aiOverride: "fakeai" });
     expect(code).toBe(0);

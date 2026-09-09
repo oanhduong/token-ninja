@@ -12,7 +12,7 @@ Anything it doesn't confidently recognize falls back to the user's AI tool
 
 - 765 built-in rules across 46 tool domains
 - Classifier hot path: ~19 µs/call; safety validator: ~4.5 µs/call (warm JIT)
-- 391 tests across 28 test files; 88.0% lines / 81.0% branches /
+- 396 tests across 28 test files; 88.0% lines / 81.0% branches /
   94.0% functions (v8 coverage over all of `src/**` except entry points and
   type-only modules; thresholds enforced at 86 / 79 / 86 / 92)
 
@@ -53,7 +53,7 @@ src/
     logger.ts                # ANSI-colored stderr
 hooks/
   claude-code-user-prompt.cjs # shipped hook: reads a prompt, calls `ninja route`, short-circuits the model on hit
-tests/                       # 28 test files, 391 tests, vitest + v8 coverage
+tests/                       # 28 test files, 396 tests, vitest + v8 coverage
                              # benchmark.test.ts runs via `npm run bench`, not `npm test`
   fixtures/real-commands.txt # ≥85% of these must classify (rules-coverage.test.ts)
 ```
@@ -63,7 +63,7 @@ tests/                       # 28 test files, 391 tests, vitest + v8 coverage
 ```bash
 npm run build            # tsc + copy YAML rules to dist/rules/builtin/
 npm run dev              # tsc -w
-npm test                 # vitest run (all 391 tests; benchmarks excluded)
+npm test                 # vitest run (all 396 tests; benchmarks excluded)
 npm run test:watch
 npm run test:coverage    # v8, thresholds: 86% lines / 79% branches / 92% functions
 npm run bench            # benchmark budgets only (vitest.bench.config.ts)
