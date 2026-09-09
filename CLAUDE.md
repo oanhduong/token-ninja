@@ -177,7 +177,10 @@ npm run typecheck        # tsc --noEmit
 
 1. `npm run lint && npm run typecheck && npm test && npm run test:coverage`
 2. Bump version in `package.json` only — `src/version.ts` reads it and
-   `cli.ts` / `mcp/server.ts` / `doctor/` import from there.
+   `cli.ts` / `mcp/server.ts` / `doctor/` import from there. In practice
+   release-please does this; only override it with `release-as` in
+   `release-please-config.json`, and **remove that key right after the
+   release ships** or every later release is pinned to the same version.
 3. Update `CHANGELOG.md`.
 4. `npm run build`
 5. `npm pack --dry-run` — confirm `dist/`, `README.md`, `LICENSE` are in.
