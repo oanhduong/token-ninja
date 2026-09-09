@@ -130,20 +130,38 @@ issue with the rule ids.
 
 ---
 
-## 8. Postinstall did nothing on `npm install -g`
+## 8. Nothing was configured after `npm install -g`
 
-The postinstall is intentionally conservative — it skips:
+That is the intended behaviour since 0.6.0: the postinstall prints the next
+steps and does not run `ninja setup` itself. Setup edits your shell rc file,
+registers MCP servers and installs a Claude Code hook — changes outside the
+package directory that `npm install` should not make unasked, and that an
+install with `--ignore-scripts` would skip anyway.
+
+```bash
+ninja setup     # do the install
+ninja doctor    # check it took
+```
+
+To restore the old automatic behaviour:
+`TOKEN_NINJA_AUTO_SETUP=1 npm install -g token-ninja`.
+
+The postinstall message itself is also skipped for:
 
 - any install where `npm_config_global` isn't `"true"`
 - any `CI=true` or `NODE_ENV=test` environment
 - `TOKEN_NINJA_SKIP_POSTINSTALL=1`
 
-Run `ninja setup` manually. Pass `TOKEN_NINJA_POSTINSTALL_DEBUG=1` on the
-install command to see why it skipped.
+Pass `TOKEN_NINJA_POSTINSTALL_DEBUG=1` on the install command to see why it
+skipped.
 
 ---
 
 ## 9. Windows quirks
+
+Native Windows (cmd/PowerShell) is **not supported** — see *Platform
+support* in the README. The package compiles and packs on Windows in CI, but
+the shim and setup flow are POSIX-only.
 
 - Paths and rc files assume a POSIX shell. On Windows, use WSL or Git Bash.
 - `ninja mcp` works natively on Windows; Claude Desktop config path is
