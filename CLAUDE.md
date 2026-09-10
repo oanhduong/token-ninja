@@ -178,9 +178,20 @@ npm run typecheck        # tsc --noEmit
 1. `npm run lint && npm run typecheck && npm test && npm run test:coverage`
 2. Bump version in `package.json` only — `src/version.ts` reads it and
    `cli.ts` / `mcp/server.ts` / `doctor/` import from there. In practice
-   release-please does this; only override it with `release-as` in
-   `release-please-config.json`, and **remove that key right after the
-   release ships** or every later release is pinned to the same version.
+   release-please does this.
+
+   Avoid `release-as` in `release-please-config.json`. Once `main` reaches
+   the pinned version, release-please computes "next = same version", never
+   sets `release_created`, and opens a fresh release PR on every push instead
+   of cutting a release — so the publish step in `release-please.yml` is
+   silently skipped and the run still reports success. To force a specific
+   version, prefer a `Release-As:` footer on one commit; if you must use the
+   config key, remove it in the very same release PR.
+
+   To publish a version release-please will not cut (a recovery path, not a
+   routine): Actions → release-please → Run workflow → `publish: true`. That
+   runs lint, typecheck, tests and build, then publishes whatever version
+   `package.json` on `main` holds.
 3. Update `CHANGELOG.md`.
 4. `npm run build`
 5. `npm pack --dry-run` — confirm `dist/`, `README.md`, `LICENSE` are in.

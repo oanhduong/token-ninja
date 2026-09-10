@@ -4,7 +4,6 @@
   "packages": {
     ".": {
       "package-name": "token-ninja",
-      "release-as": "0.6.0",
       "changelog-path": "CHANGELOG.md",
       "include-v-in-tag": true,
       "include-component-in-tag": false,
