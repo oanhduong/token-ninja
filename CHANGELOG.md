@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project
 adheres to [SemVer](https://semver.org/).
 
+## [0.6.1](https://github.com/oanhduong/token-ninja/compare/v0.6.0...v0.6.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **ci:** remove the release-as pin that was silently skipping npm publish ([#23](https://github.com/oanhduong/token-ninja/issues/23)) ([b6ac110](https://github.com/oanhduong/token-ninja/commit/b6ac1107b1bc39fc482aa45dd14b85df8a9f0ff3))
+
 ## [0.6.0](https://github.com/oanhduong/token-ninja/compare/v0.6.0...v0.6.0) (2026-09-09)
 
 
